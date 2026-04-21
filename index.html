@@ -1,0 +1,746 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>WA Number Extractor</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;700;800&display=swap');
+
+  :root {
+    --bg:      #030711;
+    --surface: #0c1220;
+    --card:    #111827;
+    --border:  #1f2d45;
+    --green:   #00ff88;
+    --cyan:    #00e5ff;
+    --purple:  #a855f7;
+    --red:     #ff4444;
+    --yellow:  #fbbf24;
+    --text:    #f0f6ff;
+    --muted:   #4b6080;
+    --mono:    'Space Mono', monospace;
+    --sans:    'Syne', sans-serif;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ── BACKGROUND GRID ── */
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background-image:
+      linear-gradient(rgba(0,229,255,.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,229,255,.03) 1px, transparent 1px);
+    background-size: 32px 32px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .wrap {
+    position: relative; z-index: 1;
+    max-width: 680px;
+    margin: 0 auto;
+    padding: 16px 14px 40px;
+  }
+
+  /* ── HEADER ── */
+  header {
+    display: flex; align-items: center; gap: 12px;
+    padding: 18px 0 14px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 20px;
+  }
+  .logo {
+    width: 42px; height: 42px; flex-shrink: 0;
+    background: linear-gradient(135deg, #00ff88, #00e5ff);
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px;
+  }
+  .header-text h1 {
+    font-size: 18px; font-weight: 800; letter-spacing: -.3px;
+    color: var(--text); line-height: 1.1;
+  }
+  .header-text p {
+    font-size: 11px; color: var(--muted);
+    font-family: var(--mono); margin-top: 2px;
+  }
+  .badge {
+    margin-left: auto;
+    font-family: var(--mono); font-size: 10px;
+    background: rgba(0,255,136,.1);
+    color: var(--green);
+    border: 1px solid rgba(0,255,136,.25);
+    padding: 3px 8px; border-radius: 20px;
+    white-space: nowrap;
+  }
+
+  /* ── COUNTER BAR ── */
+  .counter-bar {
+    display: grid; grid-template-columns: repeat(3,1fr);
+    gap: 8px; margin-bottom: 18px;
+  }
+  .counter-pill {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 10px 8px;
+    text-align: center;
+  }
+  .counter-pill .num {
+    font-family: var(--mono); font-size: 22px; font-weight: 700;
+    line-height: 1;
+  }
+  .counter-pill .lbl {
+    font-size: 10px; color: var(--muted);
+    margin-top: 3px; text-transform: uppercase; letter-spacing: .5px;
+  }
+  .c-total .num { color: var(--cyan); }
+  .c-new   .num { color: var(--green); }
+  .c-dup   .num { color: var(--yellow); }
+
+  /* ── INPUT AREA ── */
+  .input-section {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    overflow: hidden;
+    margin-bottom: 14px;
+    transition: border-color .2s;
+  }
+  .input-section:focus-within {
+    border-color: var(--cyan);
+    box-shadow: 0 0 0 3px rgba(0,229,255,.08);
+  }
+  .input-label {
+    padding: 12px 16px 0;
+    font-size: 11px; font-weight: 700;
+    letter-spacing: .8px; text-transform: uppercase;
+    color: var(--muted);
+  }
+  textarea {
+    width: 100%; min-height: 130px;
+    background: transparent;
+    color: var(--text);
+    font-family: var(--mono); font-size: 13px; line-height: 1.7;
+    border: none; outline: none; resize: vertical;
+    padding: 10px 16px 14px;
+    caret-color: var(--green);
+  }
+  textarea::placeholder { color: var(--muted); }
+
+  /* ── BOTONES DE ACCIÓN ── */
+  .actions {
+    display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap;
+  }
+  .btn {
+    flex: 1; min-width: 100px;
+    padding: 12px 10px;
+    border-radius: 10px; border: none; outline: none;
+    font-family: var(--sans); font-size: 13px; font-weight: 700;
+    cursor: pointer; transition: all .15s; text-align: center;
+    letter-spacing: .2px;
+  }
+  .btn:active { transform: scale(.97); }
+
+  .btn-extract {
+    background: linear-gradient(135deg, #00ff88, #00e5ff);
+    color: #030711; font-size: 14px;
+  }
+  .btn-extract:hover { filter: brightness(1.1); }
+
+  .btn-clear {
+    background: rgba(255,68,68,.12);
+    border: 1px solid rgba(255,68,68,.3);
+    color: var(--red);
+  }
+  .btn-clear:hover { background: rgba(255,68,68,.2); }
+
+  .btn-clear-all {
+    background: rgba(75,96,128,.12);
+    border: 1px solid var(--border);
+    color: var(--muted);
+  }
+  .btn-clear-all:hover { background: rgba(75,96,128,.2); color: var(--text); }
+
+  /* ── TOAST ── */
+  #toast {
+    position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%) translateY(80px);
+    background: var(--card); border: 1px solid var(--border);
+    color: var(--text); font-family: var(--mono); font-size: 12px;
+    padding: 10px 20px; border-radius: 30px;
+    box-shadow: 0 4px 30px rgba(0,0,0,.6);
+    transition: transform .3s ease, opacity .3s;
+    opacity: 0; z-index: 999; white-space: nowrap;
+  }
+  #toast.show {
+    transform: translateX(-50%) translateY(0);
+    opacity: 1;
+  }
+  #toast.success { border-color: var(--green); color: var(--green); }
+  #toast.warn    { border-color: var(--yellow); color: var(--yellow); }
+
+  /* ── RESULTADO FLASH ── */
+  #result-flash {
+    display: none;
+    background: var(--card); border: 1px solid var(--green);
+    border-radius: 12px; padding: 12px 16px;
+    margin-bottom: 14px;
+    animation: flashIn .3s ease;
+  }
+  @keyframes flashIn {
+    from { opacity:0; transform: translateY(-6px); }
+    to   { opacity:1; transform: translateY(0); }
+  }
+  #result-flash .rf-line {
+    font-family: var(--mono); font-size: 12px;
+    color: var(--green); line-height: 1.8;
+  }
+  #result-flash .rf-line span { color: var(--muted); }
+
+  /* ── LISTA DE CONTACTOS ── */
+  .list-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 10px;
+  }
+  .list-header h2 {
+    font-size: 13px; font-weight: 700; color: var(--cyan);
+    text-transform: uppercase; letter-spacing: .6px;
+    font-family: var(--mono);
+  }
+  .search-box {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 6px 10px;
+    font-family: var(--mono); font-size: 12px;
+    color: var(--text); outline: none; width: 140px;
+  }
+  .search-box::placeholder { color: var(--muted); }
+  .search-box:focus { border-color: var(--cyan); }
+
+  #contact-list {
+    display: flex; flex-direction: column; gap: 6px;
+    max-height: 380px; overflow-y: auto;
+    padding-right: 2px;
+  }
+  #contact-list::-webkit-scrollbar { width: 4px; }
+  #contact-list::-webkit-scrollbar-track { background: var(--bg); }
+  #contact-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+  .contact-item {
+    display: flex; align-items: center; gap: 10px;
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 10px; padding: 10px 12px;
+    transition: border-color .15s, background .15s;
+    animation: itemIn .2s ease;
+  }
+  @keyframes itemIn {
+    from { opacity:0; transform:translateX(-8px); }
+    to   { opacity:1; transform:translateX(0); }
+  }
+  .contact-item.new-item {
+    border-color: rgba(0,255,136,.4);
+    background: rgba(0,255,136,.04);
+  }
+  .contact-item:hover { border-color: var(--cyan); }
+
+  .ci-idx {
+    font-family: var(--mono); font-size: 10px;
+    color: var(--muted); min-width: 60px;
+  }
+  .ci-phone {
+    flex: 1; font-family: var(--mono); font-size: 14px;
+    color: var(--cyan); font-weight: 700; letter-spacing: .3px;
+  }
+  .ci-name {
+    font-size: 11px; color: var(--muted);
+    font-family: var(--mono); text-align: right;
+  }
+  .ci-del {
+    background: none; border: none; cursor: pointer;
+    color: var(--muted); font-size: 16px; padding: 2px 4px;
+    border-radius: 4px; transition: color .15s;
+    flex-shrink: 0;
+  }
+  .ci-del:hover { color: var(--red); }
+
+  .empty-state {
+    text-align: center; padding: 40px 20px;
+    color: var(--muted); font-size: 13px;
+    font-family: var(--mono); line-height: 2;
+  }
+  .empty-state .icon { font-size: 36px; display: block; margin-bottom: 8px; }
+
+  /* ── EXPORT SECTION ── */
+  .export-section {
+    margin-top: 18px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 16px;
+  }
+  .export-section h3 {
+    font-size: 11px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: .8px;
+    color: var(--muted); margin-bottom: 12px;
+    font-family: var(--mono);
+  }
+  .export-btns {
+    display: grid; grid-template-columns: repeat(3,1fr); gap: 8px;
+  }
+  .btn-export {
+    padding: 11px 6px; border-radius: 10px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    font-family: var(--mono); font-size: 12px; font-weight: 700;
+    cursor: pointer; transition: all .15s;
+    display: flex; flex-direction: column;
+    align-items: center; gap: 4px;
+  }
+  .btn-export:active { transform: scale(.96); }
+  .btn-export .ext { font-size: 18px; }
+
+  .btn-json { color: var(--yellow); }
+  .btn-json:hover { border-color: var(--yellow); background: rgba(251,191,36,.08); }
+
+  .btn-csv  { color: var(--green); }
+  .btn-csv:hover  { border-color: var(--green);  background: rgba(0,255,136,.08); }
+
+  .btn-xlsx { color: var(--purple); }
+  .btn-xlsx:hover { border-color: var(--purple); background: rgba(168,85,247,.08); }
+
+  /* ── PROGRESS BAR ── */
+  .progress-bar {
+    height: 3px; background: var(--border);
+    border-radius: 2px; overflow: hidden;
+    margin-bottom: 14px; display: none;
+  }
+  .progress-bar.active { display: block; }
+  .progress-fill {
+    height: 100%; width: 0%;
+    background: linear-gradient(90deg, var(--green), var(--cyan));
+    border-radius: 2px;
+    transition: width .1s linear;
+  }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 420px) {
+    .counter-pill .num { font-size: 18px; }
+    .ci-phone { font-size: 13px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- HEADER -->
+  <header>
+    <div class="logo">📱</div>
+    <div class="header-text">
+      <h1>WA Number Extractor</h1>
+      <p>PEGA TEXTO · EXTRAE · DESCARGA</p>
+    </div>
+    <span class="badge" id="storage-badge">0 guardados</span>
+  </header>
+
+  <!-- COUNTERS -->
+  <div class="counter-bar">
+    <div class="counter-pill c-total">
+      <div class="num" id="cnt-total">0</div>
+      <div class="lbl">Total</div>
+    </div>
+    <div class="counter-pill c-new">
+      <div class="num" id="cnt-new">0</div>
+      <div class="lbl">Nuevos</div>
+    </div>
+    <div class="counter-pill c-dup">
+      <div class="num" id="cnt-dup">0</div>
+      <div class="lbl">Duplicados</div>
+    </div>
+  </div>
+
+  <!-- PROGRESS -->
+  <div class="progress-bar" id="progress-bar">
+    <div class="progress-fill" id="progress-fill"></div>
+  </div>
+
+  <!-- FLASH RESULT -->
+  <div id="result-flash"></div>
+
+  <!-- INPUT -->
+  <div class="input-section">
+    <div class="input-label">📋 Pega el texto aquí</div>
+    <textarea id="input-text"
+      placeholder="Pega cualquier texto con números de WhatsApp.&#10;&#10;Detecta automáticamente:&#10;  +57 311 7455187&#10;  311 7455178&#10;  3133118664&#10;  +1 (305) 555-0100&#10;  +34 612 345 678&#10;&#10;¡Puede estar mezclado con cualquier texto!"></textarea>
+  </div>
+
+  <!-- ACTIONS -->
+  <div class="actions">
+    <button class="btn btn-extract" onclick="extract()">⚡ EXTRAER NÚMEROS</button>
+    <button class="btn btn-clear" onclick="clearInput()">✕ Limpiar</button>
+    <button class="btn btn-clear-all" onclick="clearAll()">🗑 Borrar todo</button>
+  </div>
+
+  <!-- LIST HEADER -->
+  <div class="list-header">
+    <h2>📞 Contactos guardados</h2>
+    <input class="search-box" id="search-box"
+           placeholder="🔍 buscar..."
+           oninput="renderList()" type="text" autocomplete="off">
+  </div>
+
+  <!-- CONTACT LIST -->
+  <div id="contact-list"></div>
+
+  <!-- EXPORT -->
+  <div class="export-section">
+    <h3>⬇ Descargar base de datos</h3>
+    <div class="export-btns">
+      <button class="btn-export btn-json" onclick="exportJSON()">
+        <span class="ext">{ }</span>JSON
+      </button>
+      <button class="btn-export btn-csv" onclick="exportCSV()">
+        <span class="ext">📊</span>CSV
+      </button>
+      <button class="btn-export btn-xlsx" onclick="exportXLSX()">
+        <span class="ext">📗</span>XLSX
+      </button>
+    </div>
+  </div>
+
+</div><!-- /wrap -->
+
+<!-- TOAST -->
+<div id="toast"></div>
+
+<!-- SheetJS para XLSX -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+<script>
+// ═══════════════════════════════════════════════════════════
+//  STORAGE
+// ═══════════════════════════════════════════════════════════
+const LS_KEY = 'wa_contacts_v4';
+
+function load() {
+  try { return JSON.parse(localStorage.getItem(LS_KEY)) || []; }
+  catch { return []; }
+}
+function save(contacts) {
+  localStorage.setItem(LS_KEY, JSON.stringify(contacts));
+}
+
+// ═══════════════════════════════════════════════════════════
+//  REGEX — detecta todos los formatos posibles
+// ═══════════════════════════════════════════════════════════
+/**
+ * Detecta números de teléfono en los formatos:
+ *   +57 311 7455187          (internacional con +)
+ *   +1 (305) 555-0100        (norteamérica)
+ *   311 7455178              (local con espacio)
+ *   3133118664               (solo dígitos, 7-15)
+ *   +34 612 345 678          (europeo)
+ *   001 305 555 0100         (00 + código de país)
+ */
+const PHONE_RE = /(?:(?:\+|00)\d{1,3}[\s.\-()]*)?\(?\d{1,4}\)?[\s.\-]*\d{2,4}[\s.\-]*\d{2,4}[\s.\-]*\d{0,4}/g;
+
+function normalizePhone(raw) {
+  // Quitar todo excepto dígitos y + inicial
+  let p = raw.replace(/[^\d+]/g, '');
+  // Si empieza con 00 → reemplazar con +
+  if (p.startsWith('00')) p = '+' + p.slice(2);
+  // Si tiene menos de 7 dígitos (sin +) → descartar
+  const digits = p.replace(/\D/g, '');
+  if (digits.length < 7 || digits.length > 15) return null;
+  return p;
+}
+
+function extractNumbers(text) {
+  const matches = text.match(PHONE_RE) || [];
+  const seen = new Set();
+  const result = [];
+  for (const m of matches) {
+    const norm = normalizePhone(m.trim());
+    if (!norm) continue;
+    const key = norm.replace(/\D/g, ''); // solo dígitos como clave
+    if (!seen.has(key)) {
+      seen.add(key);
+      result.push(norm);
+    }
+  }
+  return result;
+}
+
+// ═══════════════════════════════════════════════════════════
+//  LÓGICA PRINCIPAL
+// ═══════════════════════════════════════════════════════════
+let lastAdded = 0;
+
+function extract() {
+  const text = document.getElementById('input-text').value.trim();
+  if (!text) { showToast('⚠ Pega texto primero', 'warn'); return; }
+
+  // Activar barra de progreso (animada)
+  const bar = document.getElementById('progress-bar');
+  const fill = document.getElementById('progress-fill');
+  bar.classList.add('active');
+  fill.style.width = '0%';
+
+  // Pequeño timeout para que el navegador pinte el estado
+  setTimeout(() => {
+    const found = extractNumbers(text);
+    fill.style.width = '40%';
+
+    if (found.length === 0) {
+      bar.classList.remove('active');
+      fill.style.width = '0%';
+      showToast('⚠ No se encontraron números', 'warn');
+      return;
+    }
+
+    const contacts = load();
+    // Set de dígitos ya existentes
+    const existingKeys = new Set(
+      contacts.map(c => c.phone.replace(/\D/g, ''))
+    );
+
+    let added = 0, dup = 0;
+    const newOnes = [];
+
+    for (const phone of found) {
+      fill.style.width = `${40 + (found.indexOf(phone) / found.length) * 50}%`;
+      const key = phone.replace(/\D/g, '');
+      if (existingKeys.has(key)) { dup++; continue; }
+      existingKeys.add(key);
+      const idx = contacts.length + added + 1;
+      const name = `Contacto${String(idx).padStart(5, '0')}`;
+      const item = { id: Date.now() + added, name, phone, addedAt: new Date().toISOString() };
+      contacts.push(item);
+      newOnes.push(item);
+      added++;
+    }
+
+    save(contacts);
+    fill.style.width = '100%';
+    lastAdded = added;
+
+    setTimeout(() => {
+      bar.classList.remove('active');
+      fill.style.width = '0%';
+    }, 600);
+
+    // Actualizar contadores visibles
+    document.getElementById('cnt-new').textContent = added;
+    document.getElementById('cnt-dup').textContent = dup;
+    document.getElementById('cnt-total').textContent = contacts.length;
+    document.getElementById('storage-badge').textContent = `${contacts.length} guardados`;
+
+    // Flash de resultado
+    const flash = document.getElementById('result-flash');
+    flash.innerHTML = `
+      <div class="rf-line">✔ Encontrados: <span>${found.length}</span> números</div>
+      <div class="rf-line">✔ Nuevos guardados: <span>${added}</span></div>
+      <div class="rf-line">⏭ Duplicados omitidos: <span>${dup}</span></div>
+    `;
+    flash.style.display = 'block';
+
+    renderList(newOnes.map(n => n.id));
+    showToast(
+      added > 0 ? `✔ ${added} contacto${added>1?'s':''} guardado${added>1?'s':''}` : `⏭ Todo duplicado`,
+      added > 0 ? 'success' : 'warn'
+    );
+  }, 30);
+}
+
+function clearInput() {
+  document.getElementById('input-text').value = '';
+  document.getElementById('result-flash').style.display = 'none';
+}
+
+function clearAll() {
+  if (!confirm('¿Borrar TODOS los contactos guardados?')) return;
+  localStorage.removeItem(LS_KEY);
+  lastAdded = 0;
+  updateCounters();
+  renderList();
+  document.getElementById('result-flash').style.display = 'none';
+  showToast('🗑 Base de datos borrada', 'warn');
+}
+
+// ═══════════════════════════════════════════════════════════
+//  RENDER DE LISTA
+// ═══════════════════════════════════════════════════════════
+function renderList(newIds = []) {
+  const contacts = load();
+  const query = document.getElementById('search-box').value.trim().toLowerCase();
+  const list  = document.getElementById('contact-list');
+
+  const filtered = query
+    ? contacts.filter(c =>
+        c.phone.includes(query) || c.name.toLowerCase().includes(query)
+      )
+    : contacts;
+
+  if (filtered.length === 0) {
+    list.innerHTML = `
+      <div class="empty-state">
+        <span class="icon">📭</span>
+        ${query ? 'Sin resultados para "' + query + '"' : 'Aún no hay contactos.\nPega texto y presiona EXTRAER NÚMEROS.'}
+      </div>`;
+    return;
+  }
+
+  const newIdSet = new Set(newIds);
+
+  // Renderizar en orden inverso (más nuevos arriba)
+  const html = [...filtered].reverse().map(c => `
+    <div class="contact-item${newIdSet.has(c.id) ? ' new-item' : ''}" id="ci-${c.id}">
+      <span class="ci-idx">${c.name}</span>
+      <span class="ci-phone">${c.phone}</span>
+      <span class="ci-name">${formatDate(c.addedAt)}</span>
+      <button class="ci-del" onclick="deleteContact(${c.id})" title="Eliminar">×</button>
+    </div>
+  `).join('');
+
+  list.innerHTML = html;
+}
+
+function formatDate(iso) {
+  const d = new Date(iso);
+  return `${d.getDate().toString().padStart(2,'0')}/${(d.getMonth()+1).toString().padStart(2,'0')} ${d.getHours().toString().padStart(2,'0')}:${d.getMinutes().toString().padStart(2,'0')}`;
+}
+
+function deleteContact(id) {
+  let contacts = load();
+  contacts = contacts.filter(c => c.id !== id);
+  save(contacts);
+  document.getElementById(`ci-${id}`)?.remove();
+  updateCounters();
+  const list = document.getElementById('contact-list');
+  if (list.children.length === 0) renderList();
+}
+
+// ═══════════════════════════════════════════════════════════
+//  COUNTERS
+// ═══════════════════════════════════════════════════════════
+function updateCounters() {
+  const contacts = load();
+  const total = contacts.length;
+  document.getElementById('cnt-total').textContent = total;
+  document.getElementById('cnt-new').textContent = lastAdded;
+  document.getElementById('cnt-dup').textContent =
+    document.getElementById('cnt-dup').textContent; // se actualiza en extract()
+  document.getElementById('storage-badge').textContent = `${total} guardados`;
+}
+
+// ═══════════════════════════════════════════════════════════
+//  EXPORTS
+// ═══════════════════════════════════════════════════════════
+function getTimestamp() {
+  const d = new Date();
+  return `${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}_${String(d.getHours()).padStart(2,'0')}${String(d.getMinutes()).padStart(2,'0')}`;
+}
+
+function exportJSON() {
+  const contacts = load();
+  if (!contacts.length) { showToast('⚠ No hay datos', 'warn'); return; }
+  const data = JSON.stringify({ exported_at: new Date().toISOString(), total: contacts.length, contacts }, null, 2);
+  download(`wa_contacts_${getTimestamp()}.json`, 'application/json', data);
+  showToast('✔ JSON descargado', 'success');
+}
+
+function exportCSV() {
+  const contacts = load();
+  if (!contacts.length) { showToast('⚠ No hay datos', 'warn'); return; }
+  const header = 'Nombre,Teléfono,Fecha\n';
+  const rows = contacts.map(c =>
+    `"${c.name}","${c.phone}","${c.addedAt}"`
+  ).join('\n');
+  // BOM para Excel
+  download(`wa_contacts_${getTimestamp()}.csv`, 'text/csv;charset=utf-8', '\uFEFF' + header + rows);
+  showToast('✔ CSV descargado', 'success');
+}
+
+function exportXLSX() {
+  const contacts = load();
+  if (!contacts.length) { showToast('⚠ No hay datos', 'warn'); return; }
+  if (typeof XLSX === 'undefined') { showToast('✗ Error cargando XLSX', 'warn'); return; }
+
+  const wsData = [
+    ['Nombre', 'Teléfono', 'Fecha agregado'],
+    ...contacts.map(c => [c.name, c.phone, c.addedAt])
+  ];
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.aoa_to_sheet(wsData);
+
+  // Ancho de columnas
+  ws['!cols'] = [{ wch: 18 }, { wch: 20 }, { wch: 22 }];
+
+  XLSX.utils.book_append_sheet(wb, ws, 'Contactos');
+  XLSX.writeFile(wb, `wa_contacts_${getTimestamp()}.xlsx`);
+  showToast('✔ XLSX descargado', 'success');
+}
+
+function download(filename, mime, content) {
+  const blob = new Blob([content], { type: mime });
+  const a    = document.createElement('a');
+  a.href     = URL.createObjectURL(blob);
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+// ═══════════════════════════════════════════════════════════
+//  TOAST
+// ═══════════════════════════════════════════════════════════
+let toastTimer;
+function showToast(msg, type = 'success') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = `show ${type}`;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { t.classList.remove('show'); }, 2400);
+}
+
+// ═══════════════════════════════════════════════════════════
+//  TECLA ENTER con Ctrl/Cmd para extraer
+// ═══════════════════════════════════════════════════════════
+document.getElementById('input-text').addEventListener('keydown', e => {
+  if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') extract();
+});
+
+// ═══════════════════════════════════════════════════════════
+//  ACTUALIZAR CONTADOR DUP en tiempo real en extract()
+//  (Parchamos el valor correcto después de extract)
+// ═══════════════════════════════════════════════════════════
+const _origExtract = extract;
+// ya está inline arriba, no necesita override
+
+// ═══════════════════════════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════════════════════════
+(function init() {
+  updateCounters();
+  renderList();
+
+  // Actualizar cnt-dup con el valor real del último lastAdded
+  // se hace dentro de extract()
+  document.getElementById('cnt-dup').textContent = '0';
+})();
+
+// Fix: actualizar cnt-dup dentro de extract()
+// (ya está en la función extract, solo nos aseguramos de refrescarlo)
+const _btnExtract = document.querySelector('.btn-extract');
+</script>
+</body>
+</html>
