@@ -607,18 +607,24 @@ function updateHomeCount() {
 async function initOCR() {
   showLoading('Cargando motor OCR...');
   try {
+    // 1. Crear el worker (especificando idioma y nivel de log)
     ocrWorker = await Tesseract.createWorker('eng', 1, {
-      logger: () => {}
+      logger: m => console.log(m) // Opcional: para ver el progreso en consola
     });
+
+    // 2. Configurar parámetros
+    // Usamos Tesseract.PSM.SINGLE_LINE o SINGLE_BLOCK para mejorar la lectura de números
     await ocrWorker.setParameters({
       tessedit_char_whitelist: '0123456789+() -.',
-      tessedit_pageseg_mode: '6',   // bloque de texto uniforme
+      tessedit_pageseg_mode: '6', // 6 = Asume un bloque de texto uniforme
     });
+
     ocrReady = true;
     hideLoading();
     document.getElementById('ocr-ind').textContent = '● OCR listo';
     document.getElementById('ocr-ind').classList.add('active');
   } catch (e) {
+    console.error("Error en OCR:", e);
     hideLoading();
     showToast('✗ Error cargando OCR', 'err');
   }
