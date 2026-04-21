@@ -518,7 +518,7 @@ html, body {
 
 <!-- Toast -->
 <div id="toast"></div>
-
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
 <script>
 // ═══════════════════════════════════════════════════
 //  STORAGE
@@ -607,24 +607,27 @@ function updateHomeCount() {
 async function initOCR() {
   showLoading('Cargando motor OCR...');
   try {
-    // 1. Crear el worker
-    ocrWorker = await Tesseract.createWorker('eng', 1, {
-      logger: m => console.log(m) 
+    ocrWorker = Tesseract.createWorker({
+      logger: () => {}
     });
 
-    // 2. IMPORTANTE: En v4, debemos asegurar que el motor esté listo 
-    // antes de configurar variables globales como el whitelist.
+    await ocrWorker.load();
+    await ocrWorker.loadLanguage('eng');
+    await ocrWorker.initialize('eng');
+
     await ocrWorker.setParameters({
       tessedit_char_whitelist: '0123456789+() -.',
-      tessedit_pageseg_mode: '6', // Asume un bloque de texto único
+      tessedit_pageseg_mode: '6',
     });
 
     ocrReady = true;
     hideLoading();
+
     document.getElementById('ocr-ind').textContent = '● OCR listo';
     document.getElementById('ocr-ind').classList.add('active');
+
   } catch (e) {
-    console.error("Error en OCR:", e);
+    console.error(e);
     hideLoading();
     showToast('✗ Error cargando OCR', 'err');
   }
