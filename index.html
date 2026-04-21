@@ -2,745 +2,921 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<title>WA Number Extractor</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>WA Cam Scanner</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/4.1.1/tesseract.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@700;800&display=swap');
 
-  :root {
-    --bg:      #030711;
-    --surface: #0c1220;
-    --card:    #111827;
-    --border:  #1f2d45;
-    --green:   #00ff88;
-    --cyan:    #00e5ff;
-    --purple:  #a855f7;
-    --red:     #ff4444;
-    --yellow:  #fbbf24;
-    --text:    #f0f6ff;
-    --muted:   #4b6080;
-    --mono:    'Space Mono', monospace;
-    --sans:    'Syne', sans-serif;
-  }
+:root {
+  --bg:     #03080f;
+  --surf:   #090f1a;
+  --card:   #0e1825;
+  --card2:  #111f30;
+  --border: #1a2d44;
+  --green:  #00ff88;
+  --cyan:   #00d4ff;
+  --red:    #ff3b3b;
+  --yellow: #fbbf24;
+  --purple: #a855f7;
+  --text:   #eef4ff;
+  --muted:  #3d5a7a;
+  --mono:   'Space Mono', monospace;
+  --sans:   'Syne', sans-serif;
+}
 
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body {
+  background: var(--bg); color: var(--text);
+  font-family: var(--sans); height: 100%;
+  overflow: hidden; user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
 
-  html, body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: var(--sans);
-    min-height: 100vh;
-    overflow-x: hidden;
-  }
+/* ═══ VIEWS ═══ */
+.view { display: none; flex-direction: column; height: 100vh; overflow: hidden; }
+.view.active { display: flex; }
 
-  /* ── BACKGROUND GRID ── */
-  body::before {
-    content: '';
-    position: fixed; inset: 0;
-    background-image:
-      linear-gradient(rgba(0,229,255,.03) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(0,229,255,.03) 1px, transparent 1px);
-    background-size: 32px 32px;
-    pointer-events: none;
-    z-index: 0;
-  }
+/* ═══════════════════════════════════════
+   HOME
+═══════════════════════════════════════ */
+#home {
+  align-items: center; justify-content: center;
+  padding: 24px 20px; text-align: center; position: relative;
+  background: radial-gradient(ellipse at 50% 20%, rgba(0,212,255,.07) 0%, transparent 65%);
+}
+#home::before {
+  content: ''; position: absolute; inset: 0;
+  background-image:
+    linear-gradient(rgba(0,212,255,.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,212,255,.025) 1px, transparent 1px);
+  background-size: 28px 28px; pointer-events: none;
+}
 
-  .wrap {
-    position: relative; z-index: 1;
-    max-width: 680px;
-    margin: 0 auto;
-    padding: 16px 14px 40px;
-  }
+.home-glow {
+  width: 90px; height: 90px; border-radius: 26px; margin: 0 auto 20px;
+  background: linear-gradient(135deg, #00ff88, #00d4ff);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 42px; position: relative; z-index: 1;
+  box-shadow: 0 0 40px rgba(0,255,136,.3), 0 0 80px rgba(0,212,255,.15);
+  animation: breathe 3s ease-in-out infinite;
+}
+@keyframes breathe {
+  0%,100% { box-shadow: 0 0 40px rgba(0,255,136,.3), 0 0 80px rgba(0,212,255,.15); }
+  50%      { box-shadow: 0 0 60px rgba(0,255,136,.5), 0 0 100px rgba(0,212,255,.25); }
+}
 
-  /* ── HEADER ── */
-  header {
-    display: flex; align-items: center; gap: 12px;
-    padding: 18px 0 14px;
-    border-bottom: 1px solid var(--border);
-    margin-bottom: 20px;
-  }
-  .logo {
-    width: 42px; height: 42px; flex-shrink: 0;
-    background: linear-gradient(135deg, #00ff88, #00e5ff);
-    border-radius: 12px;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 22px;
-  }
-  .header-text h1 {
-    font-size: 18px; font-weight: 800; letter-spacing: -.3px;
-    color: var(--text); line-height: 1.1;
-  }
-  .header-text p {
-    font-size: 11px; color: var(--muted);
-    font-family: var(--mono); margin-top: 2px;
-  }
-  .badge {
-    margin-left: auto;
-    font-family: var(--mono); font-size: 10px;
-    background: rgba(0,255,136,.1);
-    color: var(--green);
-    border: 1px solid rgba(0,255,136,.25);
-    padding: 3px 8px; border-radius: 20px;
-    white-space: nowrap;
-  }
+.home-title {
+  font-size: 26px; font-weight: 800; line-height: 1.1;
+  margin-bottom: 8px; position: relative; z-index: 1;
+}
+.home-title em { color: var(--cyan); font-style: normal; }
+.home-sub {
+  font-size: 12px; color: var(--muted); font-family: var(--mono);
+  line-height: 1.8; margin-bottom: 36px; position: relative; z-index: 1;
+}
 
-  /* ── COUNTER BAR ── */
-  .counter-bar {
-    display: grid; grid-template-columns: repeat(3,1fr);
-    gap: 8px; margin-bottom: 18px;
-  }
-  .counter-pill {
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 10px 8px;
-    text-align: center;
-  }
-  .counter-pill .num {
-    font-family: var(--mono); font-size: 22px; font-weight: 700;
-    line-height: 1;
-  }
-  .counter-pill .lbl {
-    font-size: 10px; color: var(--muted);
-    margin-top: 3px; text-transform: uppercase; letter-spacing: .5px;
-  }
-  .c-total .num { color: var(--cyan); }
-  .c-new   .num { color: var(--green); }
-  .c-dup   .num { color: var(--yellow); }
+.pill-row { display: flex; gap: 8px; justify-content: center; margin-bottom: 36px; position: relative; z-index: 1; }
+.pill {
+  padding: 5px 12px; border-radius: 20px; font-size: 11px;
+  font-family: var(--mono); border: 1px solid;
+}
+.pill-g { border-color: rgba(0,255,136,.3); color: var(--green); background: rgba(0,255,136,.06); }
+.pill-c { border-color: rgba(0,212,255,.3); color: var(--cyan);  background: rgba(0,212,255,.06); }
+.pill-y { border-color: rgba(251,191,36,.3); color: var(--yellow); background: rgba(251,191,36,.06); }
 
-  /* ── INPUT AREA ── */
-  .input-section {
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: 16px;
-    overflow: hidden;
-    margin-bottom: 14px;
-    transition: border-color .2s;
-  }
-  .input-section:focus-within {
-    border-color: var(--cyan);
-    box-shadow: 0 0 0 3px rgba(0,229,255,.08);
-  }
-  .input-label {
-    padding: 12px 16px 0;
-    font-size: 11px; font-weight: 700;
-    letter-spacing: .8px; text-transform: uppercase;
-    color: var(--muted);
-  }
-  textarea {
-    width: 100%; min-height: 130px;
-    background: transparent;
-    color: var(--text);
-    font-family: var(--mono); font-size: 13px; line-height: 1.7;
-    border: none; outline: none; resize: vertical;
-    padding: 10px 16px 14px;
-    caret-color: var(--green);
-  }
-  textarea::placeholder { color: var(--muted); }
+.home-actions { display: flex; flex-direction: column; gap: 10px; width: 100%; max-width: 320px; position: relative; z-index: 1; }
 
-  /* ── BOTONES DE ACCIÓN ── */
-  .actions {
-    display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap;
-  }
-  .btn {
-    flex: 1; min-width: 100px;
-    padding: 12px 10px;
-    border-radius: 10px; border: none; outline: none;
-    font-family: var(--sans); font-size: 13px; font-weight: 700;
-    cursor: pointer; transition: all .15s; text-align: center;
-    letter-spacing: .2px;
-  }
-  .btn:active { transform: scale(.97); }
+.btn-main {
+  display: flex; align-items: center; gap: 14px;
+  padding: 16px 20px; border-radius: 16px; border: none;
+  cursor: pointer; text-align: left; transition: all .18s; width: 100%;
+}
+.btn-main:active { transform: scale(.97); }
+.btn-main .bicon { font-size: 26px; flex-shrink: 0; }
+.btn-main .blabel strong { display: block; font-size: 15px; font-family: var(--sans); font-weight: 700; }
+.btn-main .blabel small { font-size: 10px; font-family: var(--mono); opacity: .65; }
 
-  .btn-extract {
-    background: linear-gradient(135deg, #00ff88, #00e5ff);
-    color: #030711; font-size: 14px;
-  }
-  .btn-extract:hover { filter: brightness(1.1); }
+.btn-scan  { background: linear-gradient(135deg, #00ff88 0%, #00d4ff 100%); color: #030811; }
+.btn-scan:hover { filter: brightness(1.1); box-shadow: 0 4px 24px rgba(0,255,136,.3); }
+.btn-contacts { background: var(--card2); border: 1px solid var(--border); color: var(--text); }
+.btn-contacts:hover { border-color: var(--cyan); }
 
-  .btn-clear {
-    background: rgba(255,68,68,.12);
-    border: 1px solid rgba(255,68,68,.3);
-    color: var(--red);
-  }
-  .btn-clear:hover { background: rgba(255,68,68,.2); }
+/* ═══════════════════════════════════════
+   SCANNER
+═══════════════════════════════════════ */
+#scanner { position: relative; background: #000; overflow: hidden; }
 
-  .btn-clear-all {
-    background: rgba(75,96,128,.12);
-    border: 1px solid var(--border);
-    color: var(--muted);
-  }
-  .btn-clear-all:hover { background: rgba(75,96,128,.2); color: var(--text); }
+#video {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  object-fit: cover; display: block;
+}
+#canvas { display: none; }
 
-  /* ── TOAST ── */
-  #toast {
-    position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%) translateY(80px);
-    background: var(--card); border: 1px solid var(--border);
-    color: var(--text); font-family: var(--mono); font-size: 12px;
-    padding: 10px 20px; border-radius: 30px;
-    box-shadow: 0 4px 30px rgba(0,0,0,.6);
-    transition: transform .3s ease, opacity .3s;
-    opacity: 0; z-index: 999; white-space: nowrap;
-  }
-  #toast.show {
-    transform: translateX(-50%) translateY(0);
-    opacity: 1;
-  }
-  #toast.success { border-color: var(--green); color: var(--green); }
-  #toast.warn    { border-color: var(--yellow); color: var(--yellow); }
+/* Overlay de escaneo */
+.scan-overlay {
+  position: absolute; inset: 0; z-index: 10;
+  display: flex; flex-direction: column;
+  pointer-events: none;
+}
 
-  /* ── RESULTADO FLASH ── */
-  #result-flash {
-    display: none;
-    background: var(--card); border: 1px solid var(--green);
-    border-radius: 12px; padding: 12px 16px;
-    margin-bottom: 14px;
-    animation: flashIn .3s ease;
-  }
-  @keyframes flashIn {
-    from { opacity:0; transform: translateY(-6px); }
-    to   { opacity:1; transform: translateY(0); }
-  }
-  #result-flash .rf-line {
-    font-family: var(--mono); font-size: 12px;
-    color: var(--green); line-height: 1.8;
-  }
-  #result-flash .rf-line span { color: var(--muted); }
+/* Marco de enfoque central */
+.scan-frame-wrap {
+  flex: 1; display: flex; align-items: center; justify-content: center;
+  padding: 20px;
+}
+.scan-frame {
+  width: 100%; max-width: 340px; aspect-ratio: 16/7;
+  position: relative; border-radius: 12px;
+}
+.scan-frame::before, .scan-frame::after,
+.sf-br::before, .sf-br::after {
+  content: ''; position: absolute;
+  width: 22px; height: 22px; border-color: var(--green);
+  border-style: solid; border-radius: 3px;
+}
+.scan-frame::before { top: 0; left: 0; border-width: 3px 0 0 3px; }
+.scan-frame::after  { top: 0; right: 0; border-width: 3px 3px 0 0; }
+.sf-br::before { bottom: 0; left: 0; border-width: 0 0 3px 3px; }
+.sf-br::after  { bottom: 0; right: 0; border-width: 0 3px 3px 0; }
 
-  /* ── LISTA DE CONTACTOS ── */
-  .list-header {
-    display: flex; align-items: center; justify-content: space-between;
-    margin-bottom: 10px;
-  }
-  .list-header h2 {
-    font-size: 13px; font-weight: 700; color: var(--cyan);
-    text-transform: uppercase; letter-spacing: .6px;
-    font-family: var(--mono);
-  }
-  .search-box {
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 6px 10px;
-    font-family: var(--mono); font-size: 12px;
-    color: var(--text); outline: none; width: 140px;
-  }
-  .search-box::placeholder { color: var(--muted); }
-  .search-box:focus { border-color: var(--cyan); }
+/* Línea de escaneo animada */
+.scan-line {
+  position: absolute; left: 3px; right: 3px; height: 2px;
+  background: linear-gradient(90deg, transparent, var(--green), transparent);
+  border-radius: 2px;
+  animation: scanAnim 2s ease-in-out infinite;
+  box-shadow: 0 0 8px var(--green);
+}
+@keyframes scanAnim {
+  0%   { top: 4px; opacity: 1; }
+  50%  { top: calc(100% - 6px); opacity: 1; }
+  100% { top: 4px; opacity: 1; }
+}
 
-  #contact-list {
-    display: flex; flex-direction: column; gap: 6px;
-    max-height: 380px; overflow-y: auto;
-    padding-right: 2px;
-  }
-  #contact-list::-webkit-scrollbar { width: 4px; }
-  #contact-list::-webkit-scrollbar-track { background: var(--bg); }
-  #contact-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+/* Barra superior del scanner */
+.scan-topbar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 16px 0; pointer-events: all;
+  background: linear-gradient(to bottom, rgba(0,0,0,.7) 0%, transparent 100%);
+}
+.scan-title { font-size: 14px; font-weight: 700; color: var(--text); }
+.scan-counter-badge {
+  background: rgba(0,255,136,.15); border: 1px solid rgba(0,255,136,.4);
+  color: var(--green); font-family: var(--mono); font-size: 11px;
+  padding: 4px 10px; border-radius: 20px;
+}
+.btn-close-scan {
+  background: rgba(255,255,255,.1); border: none; cursor: pointer;
+  color: var(--text); font-size: 20px; width: 34px; height: 34px;
+  border-radius: 50%; display: flex; align-items: center; justify-content: center;
+  pointer-events: all; transition: background .15s;
+}
+.btn-close-scan:hover { background: rgba(255,59,59,.3); }
 
-  .contact-item {
-    display: flex; align-items: center; gap: 10px;
-    background: var(--card); border: 1px solid var(--border);
-    border-radius: 10px; padding: 10px 12px;
-    transition: border-color .15s, background .15s;
-    animation: itemIn .2s ease;
-  }
-  @keyframes itemIn {
-    from { opacity:0; transform:translateX(-8px); }
-    to   { opacity:1; transform:translateX(0); }
-  }
-  .contact-item.new-item {
-    border-color: rgba(0,255,136,.4);
-    background: rgba(0,255,136,.04);
-  }
-  .contact-item:hover { border-color: var(--cyan); }
+/* Status debajo del frame */
+.scan-status {
+  text-align: center; padding: 0 20px 8px;
+  font-size: 11px; font-family: var(--mono); color: rgba(255,255,255,.5);
+}
+.scan-status.detecting { color: var(--cyan); }
+.scan-status.found     { color: var(--green); }
 
-  .ci-idx {
-    font-family: var(--mono); font-size: 10px;
-    color: var(--muted); min-width: 60px;
-  }
-  .ci-phone {
-    flex: 1; font-family: var(--mono); font-size: 14px;
-    color: var(--cyan); font-weight: 700; letter-spacing: .3px;
-  }
-  .ci-name {
-    font-size: 11px; color: var(--muted);
-    font-family: var(--mono); text-align: right;
-  }
-  .ci-del {
-    background: none; border: none; cursor: pointer;
-    color: var(--muted); font-size: 16px; padding: 2px 4px;
-    border-radius: 4px; transition: color .15s;
-    flex-shrink: 0;
-  }
-  .ci-del:hover { color: var(--red); }
+/* Número detectado — flash */
+#detected-flash {
+  position: absolute; bottom: 140px; left: 50%; transform: translateX(-50%);
+  z-index: 20; pointer-events: none;
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  min-width: 200px;
+}
+.det-chip {
+  background: rgba(0,255,136,.12); border: 1px solid var(--green);
+  color: var(--green); font-family: var(--mono); font-size: 15px; font-weight: 700;
+  padding: 8px 18px; border-radius: 30px;
+  backdrop-filter: blur(8px);
+  box-shadow: 0 0 20px rgba(0,255,136,.3);
+  animation: chipIn .25s ease forwards;
+  white-space: nowrap;
+}
+.det-chip.dup {
+  border-color: var(--yellow); color: var(--yellow);
+  background: rgba(251,191,36,.1);
+  box-shadow: 0 0 20px rgba(251,191,36,.2);
+}
+@keyframes chipIn {
+  from { opacity: 0; transform: translateY(10px) scale(.9); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
 
-  .empty-state {
-    text-align: center; padding: 40px 20px;
-    color: var(--muted); font-size: 13px;
-    font-family: var(--mono); line-height: 2;
-  }
-  .empty-state .icon { font-size: 36px; display: block; margin-bottom: 8px; }
+/* Barra inferior del scanner con últimos encontrados */
+.scan-bottom {
+  background: linear-gradient(to top, rgba(0,0,0,.9) 0%, transparent 100%);
+  padding: 20px 16px 20px; pointer-events: all;
+  min-height: 120px;
+}
+.scan-bottom-label {
+  font-size: 10px; font-family: var(--mono); color: var(--muted);
+  text-transform: uppercase; letter-spacing: .6px; margin-bottom: 8px;
+}
+.recent-chips {
+  display: flex; flex-wrap: wrap; gap: 6px;
+  max-height: 70px; overflow: hidden;
+}
+.recent-chip {
+  font-family: var(--mono); font-size: 11px;
+  padding: 4px 10px; border-radius: 16px;
+  border: 1px solid rgba(0,212,255,.3);
+  color: var(--cyan); background: rgba(0,212,255,.07);
+  animation: chipIn .2s ease;
+}
 
-  /* ── EXPORT SECTION ── */
-  .export-section {
-    margin-top: 18px;
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: 16px;
-    padding: 16px;
-  }
-  .export-section h3 {
-    font-size: 11px; font-weight: 700;
-    text-transform: uppercase; letter-spacing: .8px;
-    color: var(--muted); margin-bottom: 12px;
-    font-family: var(--mono);
-  }
-  .export-btns {
-    display: grid; grid-template-columns: repeat(3,1fr); gap: 8px;
-  }
-  .btn-export {
-    padding: 11px 6px; border-radius: 10px;
-    border: 1px solid var(--border);
-    background: var(--surface);
-    font-family: var(--mono); font-size: 12px; font-weight: 700;
-    cursor: pointer; transition: all .15s;
-    display: flex; flex-direction: column;
-    align-items: center; gap: 4px;
-  }
-  .btn-export:active { transform: scale(.96); }
-  .btn-export .ext { font-size: 18px; }
+/* Botón de flash/torch */
+.btn-torch {
+  position: absolute; top: 14px; right: 56px; z-index: 30;
+  background: rgba(255,255,255,.1); border: none; cursor: pointer;
+  color: var(--text); font-size: 20px; width: 34px; height: 34px;
+  border-radius: 50%; display: flex; align-items: center; justify-content: center;
+  transition: background .15s; pointer-events: all;
+}
+.btn-torch.on { background: rgba(251,191,36,.25); color: var(--yellow); }
 
-  .btn-json { color: var(--yellow); }
-  .btn-json:hover { border-color: var(--yellow); background: rgba(251,191,36,.08); }
+/* FPS / OCR indicator */
+.ocr-indicator {
+  position: absolute; top: 58px; left: 50%; transform: translateX(-50%);
+  font-family: var(--mono); font-size: 10px; color: rgba(0,255,136,.5);
+  background: rgba(0,0,0,.4); padding: 2px 8px; border-radius: 10px;
+  z-index: 20; pointer-events: none; transition: color .3s;
+}
+.ocr-indicator.active { color: var(--green); }
 
-  .btn-csv  { color: var(--green); }
-  .btn-csv:hover  { border-color: var(--green);  background: rgba(0,255,136,.08); }
+/* ═══════════════════════════════════════
+   CONTACTS VIEW
+═══════════════════════════════════════ */
+#contacts {
+  background: var(--surf);
+  overflow: hidden;
+}
 
-  .btn-xlsx { color: var(--purple); }
-  .btn-xlsx:hover { border-color: var(--purple); background: rgba(168,85,247,.08); }
+.contacts-header {
+  background: var(--card); border-bottom: 1px solid var(--border);
+  padding: 14px 16px; flex-shrink: 0;
+  display: flex; align-items: center; gap: 10px;
+}
+.btn-back {
+  background: none; border: none; cursor: pointer; color: var(--cyan);
+  font-size: 22px; padding: 2px 6px; border-radius: 6px;
+  transition: background .15s; flex-shrink: 0;
+}
+.btn-back:hover { background: rgba(0,212,255,.1); }
+.contacts-header h2 { font-size: 15px; font-weight: 700; flex: 1; }
+.contacts-header .hbadge {
+  font-family: var(--mono); font-size: 11px;
+  background: rgba(0,255,136,.1); border: 1px solid rgba(0,255,136,.25);
+  color: var(--green); padding: 3px 10px; border-radius: 16px;
+}
 
-  /* ── PROGRESS BAR ── */
-  .progress-bar {
-    height: 3px; background: var(--border);
-    border-radius: 2px; overflow: hidden;
-    margin-bottom: 14px; display: none;
-  }
-  .progress-bar.active { display: block; }
-  .progress-fill {
-    height: 100%; width: 0%;
-    background: linear-gradient(90deg, var(--green), var(--cyan));
-    border-radius: 2px;
-    transition: width .1s linear;
-  }
+/* Stats row */
+.stats-row {
+  display: grid; grid-template-columns: repeat(3,1fr);
+  gap: 0; border-bottom: 1px solid var(--border); flex-shrink: 0;
+}
+.stat-cell {
+  padding: 10px 8px; text-align: center;
+  border-right: 1px solid var(--border);
+}
+.stat-cell:last-child { border-right: none; }
+.stat-cell .snum {
+  font-family: var(--mono); font-size: 20px; font-weight: 700; line-height: 1;
+}
+.stat-cell .slbl { font-size: 9px; color: var(--muted); text-transform: uppercase; letter-spacing: .4px; margin-top: 2px; }
+.s-total .snum { color: var(--cyan); }
+.s-new   .snum { color: var(--green); }
+.s-sess  .snum { color: var(--yellow); }
 
-  /* ── RESPONSIVE ── */
-  @media (max-width: 420px) {
-    .counter-pill .num { font-size: 18px; }
-    .ci-phone { font-size: 13px; }
-  }
+/* Search */
+.search-wrap {
+  padding: 10px 14px; border-bottom: 1px solid var(--border); flex-shrink: 0;
+}
+.search-input {
+  width: 100%; background: var(--card2); border: 1px solid var(--border);
+  border-radius: 10px; padding: 9px 14px; font-family: var(--mono);
+  font-size: 13px; color: var(--text); outline: none;
+  transition: border-color .15s;
+}
+.search-input:focus { border-color: var(--cyan); }
+.search-input::placeholder { color: var(--muted); }
+
+/* List */
+.contact-list {
+  flex: 1; overflow-y: auto; padding: 8px 14px 20px;
+}
+.contact-list::-webkit-scrollbar { width: 3px; }
+.contact-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+.contact-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 11px 12px; border-radius: 12px;
+  border: 1px solid var(--border); background: var(--card);
+  margin-bottom: 6px; transition: border-color .15s;
+  animation: itemSlide .2s ease;
+}
+@keyframes itemSlide {
+  from { opacity: 0; transform: translateX(-8px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+.contact-item.is-new { border-color: rgba(0,255,136,.35); background: rgba(0,255,136,.04); }
+.contact-item:hover { border-color: var(--cyan); }
+
+.ci-avatar {
+  width: 36px; height: 36px; border-radius: 10px; flex-shrink: 0;
+  background: linear-gradient(135deg, var(--cyan), var(--purple));
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; font-weight: 700; color: #fff; font-family: var(--mono);
+}
+.ci-info { flex: 1; min-width: 0; }
+.ci-name { font-size: 10px; color: var(--muted); font-family: var(--mono); margin-bottom: 2px; }
+.ci-phone { font-family: var(--mono); font-size: 14px; font-weight: 700; color: var(--cyan); }
+.ci-date { font-size: 9px; color: var(--muted); font-family: var(--mono); text-align: right; }
+.ci-del {
+  background: none; border: none; cursor: pointer; color: var(--muted);
+  font-size: 18px; padding: 2px 5px; border-radius: 5px; transition: color .15s; flex-shrink: 0;
+}
+.ci-del:hover { color: var(--red); }
+
+/* Export section */
+.export-wrap {
+  background: var(--card); border-top: 1px solid var(--border);
+  padding: 12px 14px; flex-shrink: 0;
+}
+.export-wrap p { font-size: 10px; font-family: var(--mono); color: var(--muted); margin-bottom: 8px; text-transform: uppercase; letter-spacing: .5px; }
+.export-btns { display: flex; gap: 8px; }
+.btn-exp {
+  flex: 1; padding: 10px 6px; border-radius: 10px;
+  border: 1px solid var(--border); background: var(--card2);
+  font-family: var(--mono); font-size: 11px; font-weight: 700;
+  cursor: pointer; transition: all .15s;
+  display: flex; flex-direction: column; align-items: center; gap: 3px;
+}
+.btn-exp:active { transform: scale(.96); }
+.btn-exp .eicon { font-size: 16px; }
+.e-json { color: var(--yellow); } .e-json:hover { border-color: var(--yellow); background: rgba(251,191,36,.07); }
+.e-csv  { color: var(--green);  } .e-csv:hover  { border-color: var(--green);  background: rgba(0,255,136,.07); }
+.e-xlsx { color: var(--purple); } .e-xlsx:hover { border-color: var(--purple); background: rgba(168,85,247,.07); }
+
+/* Empty state */
+.empty {
+  padding: 50px 20px; text-align: center;
+  color: var(--muted); font-family: var(--mono); font-size: 12px; line-height: 2;
+}
+.empty .eicon { font-size: 40px; display: block; margin-bottom: 12px; }
+
+/* ═══ TOAST ═══ */
+#toast {
+  position: fixed; bottom: 24px; left: 50%;
+  transform: translateX(-50%) translateY(60px);
+  background: var(--card2); border: 1px solid var(--border);
+  color: var(--text); font-family: var(--mono); font-size: 12px;
+  padding: 10px 20px; border-radius: 30px;
+  box-shadow: 0 4px 30px rgba(0,0,0,.6);
+  transition: transform .3s, opacity .3s; opacity: 0;
+  z-index: 9999; white-space: nowrap; pointer-events: none;
+}
+#toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+#toast.ok   { border-color: var(--green); color: var(--green); }
+#toast.warn { border-color: var(--yellow); color: var(--yellow); }
+#toast.err  { border-color: var(--red); color: var(--red); }
+
+/* ═══ LOADING OVERLAY ═══ */
+#loading {
+  position: fixed; inset: 0; background: rgba(3,8,15,.92);
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center; z-index: 9998;
+  display: none;
+}
+#loading .spin {
+  width: 44px; height: 44px; border: 3px solid var(--border);
+  border-top-color: var(--cyan); border-radius: 50%;
+  animation: spin .7s linear infinite; margin-bottom: 14px;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+#loading p { font-family: var(--mono); font-size: 12px; color: var(--muted); }
 </style>
 </head>
 <body>
-<div class="wrap">
 
-  <!-- HEADER -->
-  <header>
-    <div class="logo">📱</div>
-    <div class="header-text">
-      <h1>WA Number Extractor</h1>
-      <p>PEGA TEXTO · EXTRAE · DESCARGA</p>
+<!-- ═══════════ HOME ═══════════ -->
+<div class="view active" id="home">
+  <div class="home-glow">📱</div>
+  <div class="home-title">WA <em>CAM</em><br>SCANNER</div>
+  <div class="home-sub">
+    Apunta la cámara a cualquier<br>
+    pantalla o papel con números<br>
+    de WhatsApp y los extrae solo.
+  </div>
+
+  <div class="pill-row">
+    <span class="pill pill-g">✓ Sin duplicados</span>
+    <span class="pill pill-c">✓ Tiempo real</span>
+    <span class="pill pill-y">✓ OCR</span>
+  </div>
+
+  <div class="home-actions">
+    <button class="btn-main btn-scan" onclick="startScanner()">
+      <span class="bicon">📷</span>
+      <span class="blabel">
+        <strong>ESCANEAR CON CÁMARA</strong>
+        <small>OCR en tiempo real</small>
+      </span>
+    </button>
+    <button class="btn-main btn-contacts" onclick="showContacts()">
+      <span class="bicon">📋</span>
+      <span class="blabel">
+        <strong>VER CONTACTOS</strong>
+        <small id="home-count">0 guardados</small>
+      </span>
+    </button>
+  </div>
+</div>
+
+<!-- ═══════════ SCANNER ═══════════ -->
+<div class="view" id="scanner">
+  <video id="video" autoplay playsinline muted></video>
+  <canvas id="canvas"></canvas>
+
+  <div class="scan-overlay">
+    <!-- Top bar -->
+    <div class="scan-topbar">
+      <div class="scan-title">📷 Escaneando...</div>
+      <span class="scan-counter-badge" id="scan-badge">0 encontrados</span>
+      <button class="btn-close-scan" onclick="stopScanner()">✕</button>
     </div>
-    <span class="badge" id="storage-badge">0 guardados</span>
-  </header>
 
-  <!-- COUNTERS -->
-  <div class="counter-bar">
-    <div class="counter-pill c-total">
-      <div class="num" id="cnt-total">0</div>
-      <div class="lbl">Total</div>
+    <!-- OCR indicator -->
+    <div class="ocr-indicator" id="ocr-ind">● OCR activo</div>
+
+    <!-- Frame de enfoque -->
+    <div class="scan-frame-wrap">
+      <div class="scan-frame">
+        <div class="sf-br"></div>
+        <div class="scan-line"></div>
+      </div>
     </div>
-    <div class="counter-pill c-new">
-      <div class="num" id="cnt-new">0</div>
-      <div class="lbl">Nuevos</div>
+
+    <!-- Status -->
+    <div class="scan-status" id="scan-status">Apunta a números de teléfono</div>
+
+    <!-- Número detectado flash -->
+    <div id="detected-flash"></div>
+
+    <!-- Bottom: últimos números -->
+    <div class="scan-bottom">
+      <div class="scan-bottom-label">Últimos detectados esta sesión</div>
+      <div class="recent-chips" id="recent-chips">
+        <span style="font-family:var(--mono);font-size:11px;color:var(--muted)">Aún no hay números...</span>
+      </div>
     </div>
-    <div class="counter-pill c-dup">
-      <div class="num" id="cnt-dup">0</div>
-      <div class="lbl">Duplicados</div>
-    </div>
   </div>
 
-  <!-- PROGRESS -->
-  <div class="progress-bar" id="progress-bar">
-    <div class="progress-fill" id="progress-fill"></div>
+  <!-- Torch -->
+  <button class="btn-torch" id="btn-torch" onclick="toggleTorch()" title="Flash">🔦</button>
+</div>
+
+<!-- ═══════════ CONTACTS ═══════════ -->
+<div class="view" id="contacts" style="display:none;flex-direction:column;">
+
+  <div class="contacts-header">
+    <button class="btn-back" onclick="showHome()">‹</button>
+    <h2>Contactos Extraídos</h2>
+    <span class="hbadge" id="c-badge">0</span>
   </div>
 
-  <!-- FLASH RESULT -->
-  <div id="result-flash"></div>
-
-  <!-- INPUT -->
-  <div class="input-section">
-    <div class="input-label">📋 Pega el texto aquí</div>
-    <textarea id="input-text"
-      placeholder="Pega cualquier texto con números de WhatsApp.&#10;&#10;Detecta automáticamente:&#10;  +57 311 7455187&#10;  311 7455178&#10;  3133118664&#10;  +1 (305) 555-0100&#10;  +34 612 345 678&#10;&#10;¡Puede estar mezclado con cualquier texto!"></textarea>
+  <div class="stats-row">
+    <div class="stat-cell s-total"><div class="snum" id="s-total">0</div><div class="slbl">Total</div></div>
+    <div class="stat-cell s-new">  <div class="snum" id="s-new">0</div>  <div class="slbl">Esta sesión</div></div>
+    <div class="stat-cell s-sess"> <div class="snum" id="s-dup">0</div>  <div class="slbl">Duplicados</div></div>
   </div>
 
-  <!-- ACTIONS -->
-  <div class="actions">
-    <button class="btn btn-extract" onclick="extract()">⚡ EXTRAER NÚMEROS</button>
-    <button class="btn btn-clear" onclick="clearInput()">✕ Limpiar</button>
-    <button class="btn btn-clear-all" onclick="clearAll()">🗑 Borrar todo</button>
+  <div class="search-wrap">
+    <input class="search-input" id="search" placeholder="🔍  Buscar número o nombre..." oninput="renderContacts()" autocomplete="off">
   </div>
 
-  <!-- LIST HEADER -->
-  <div class="list-header">
-    <h2>📞 Contactos guardados</h2>
-    <input class="search-box" id="search-box"
-           placeholder="🔍 buscar..."
-           oninput="renderList()" type="text" autocomplete="off">
-  </div>
+  <div class="contact-list" id="contact-list"></div>
 
-  <!-- CONTACT LIST -->
-  <div id="contact-list"></div>
-
-  <!-- EXPORT -->
-  <div class="export-section">
-    <h3>⬇ Descargar base de datos</h3>
+  <div class="export-wrap">
+    <p>⬇ Descargar</p>
     <div class="export-btns">
-      <button class="btn-export btn-json" onclick="exportJSON()">
-        <span class="ext">{ }</span>JSON
-      </button>
-      <button class="btn-export btn-csv" onclick="exportCSV()">
-        <span class="ext">📊</span>CSV
-      </button>
-      <button class="btn-export btn-xlsx" onclick="exportXLSX()">
-        <span class="ext">📗</span>XLSX
-      </button>
+      <button class="btn-exp e-json" onclick="exportJSON()"><span class="eicon">{ }</span>JSON</button>
+      <button class="btn-exp e-csv"  onclick="exportCSV()"><span class="eicon">📊</span>CSV</button>
+      <button class="btn-exp e-xlsx" onclick="exportXLSX()"><span class="eicon">📗</span>XLSX</button>
     </div>
   </div>
+</div>
 
-</div><!-- /wrap -->
+<!-- Loading -->
+<div id="loading"><div class="spin"></div><p id="loading-msg">Iniciando OCR...</p></div>
 
-<!-- TOAST -->
+<!-- Toast -->
 <div id="toast"></div>
 
-<!-- SheetJS para XLSX -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-
 <script>
-// ═══════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════
 //  STORAGE
-// ═══════════════════════════════════════════════════════════
-const LS_KEY = 'wa_contacts_v4';
+// ═══════════════════════════════════════════════════
+const KEY = 'wa_scan_v1';
+function dbLoad()        { try { return JSON.parse(localStorage.getItem(KEY)) || []; } catch { return []; } }
+function dbSave(d)       { localStorage.setItem(KEY, JSON.stringify(d)); }
+function dbPhoneSet()    { return new Set(dbLoad().map(c => digitsOnly(c.phone))); }
 
-function load() {
-  try { return JSON.parse(localStorage.getItem(LS_KEY)) || []; }
-  catch { return []; }
-}
-function save(contacts) {
-  localStorage.setItem(LS_KEY, JSON.stringify(contacts));
-}
+// ═══════════════════════════════════════════════════
+//  PHONE UTILS
+// ═══════════════════════════════════════════════════
+function digitsOnly(s) { return (s || '').replace(/\D/g,''); }
 
-// ═══════════════════════════════════════════════════════════
-//  REGEX — detecta todos los formatos posibles
-// ═══════════════════════════════════════════════════════════
-/**
- * Detecta números de teléfono en los formatos:
- *   +57 311 7455187          (internacional con +)
- *   +1 (305) 555-0100        (norteamérica)
- *   311 7455178              (local con espacio)
- *   3133118664               (solo dígitos, 7-15)
- *   +34 612 345 678          (europeo)
- *   001 305 555 0100         (00 + código de país)
- */
-const PHONE_RE = /(?:(?:\+|00)\d{1,3}[\s.\-()]*)?\(?\d{1,4}\)?[\s.\-]*\d{2,4}[\s.\-]*\d{2,4}[\s.\-]*\d{0,4}/g;
+// Regex amplio — captura todos los formatos
+const PHONE_RE = /(?:(?:\+|00)\d{1,3}[\s.\-()*]*)?\(?\d{1,4}\)?[\s.\-]*\d{2,5}[\s.\-]*\d{2,5}(?:[\s.\-]*\d{1,5})?/g;
 
 function normalizePhone(raw) {
-  // Quitar todo excepto dígitos y + inicial
-  let p = raw.replace(/[^\d+]/g, '');
-  // Si empieza con 00 → reemplazar con +
+  let p = raw.replace(/[^\d+]/g,'');
   if (p.startsWith('00')) p = '+' + p.slice(2);
-  // Si tiene menos de 7 dígitos (sin +) → descartar
-  const digits = p.replace(/\D/g, '');
-  if (digits.length < 7 || digits.length > 15) return null;
-  return p;
+  const d = p.replace(/\D/g,'');
+  if (d.length < 7 || d.length > 15) return null;
+  // Formato de salida limpio
+  return p.startsWith('+') ? p : d;
 }
 
-function extractNumbers(text) {
+function extractPhones(text) {
   const matches = text.match(PHONE_RE) || [];
-  const seen = new Set();
-  const result = [];
+  const seen = new Set(), result = [];
   for (const m of matches) {
     const norm = normalizePhone(m.trim());
     if (!norm) continue;
-    const key = norm.replace(/\D/g, ''); // solo dígitos como clave
-    if (!seen.has(key)) {
-      seen.add(key);
-      result.push(norm);
-    }
+    const k = digitsOnly(norm);
+    if (!seen.has(k)) { seen.add(k); result.push(norm); }
   }
   return result;
 }
 
-// ═══════════════════════════════════════════════════════════
-//  LÓGICA PRINCIPAL
-// ═══════════════════════════════════════════════════════════
-let lastAdded = 0;
+// ═══════════════════════════════════════════════════
+//  STATE
+// ═══════════════════════════════════════════════════
+let sessionCount = 0;
+let sessionDups  = 0;
+let sessionNew   = 0;
+let scanInterval = null;
+let ocrWorker    = null;
+let ocrReady     = false;
+let torchOn      = false;
+let videoStream  = null;
+let lastFlashPhone = '';
+let flashTimer   = null;
 
-function extract() {
-  const text = document.getElementById('input-text').value.trim();
-  if (!text) { showToast('⚠ Pega texto primero', 'warn'); return; }
+// ═══════════════════════════════════════════════════
+//  VIEWS
+// ═══════════════════════════════════════════════════
+function showView(id) {
+  document.querySelectorAll('.view').forEach(v => {
+    v.classList.remove('active');
+    v.style.display = 'none';
+  });
+  const el = document.getElementById(id);
+  el.style.display = 'flex';
+  el.classList.add('active');
+}
 
-  // Activar barra de progreso (animada)
-  const bar = document.getElementById('progress-bar');
-  const fill = document.getElementById('progress-fill');
-  bar.classList.add('active');
-  fill.style.width = '0%';
+function showHome() {
+  stopScanner();
+  showView('home');
+  updateHomeCount();
+}
 
-  // Pequeño timeout para que el navegador pinte el estado
-  setTimeout(() => {
-    const found = extractNumbers(text);
-    fill.style.width = '40%';
+function showContacts() {
+  showView('contacts');
+  renderContacts();
+  updateStats();
+}
 
-    if (found.length === 0) {
-      bar.classList.remove('active');
-      fill.style.width = '0%';
-      showToast('⚠ No se encontraron números', 'warn');
+function updateHomeCount() {
+  const n = dbLoad().length;
+  document.getElementById('home-count').textContent = `${n} guardado${n!==1?'s':''}`;
+}
+
+// ═══════════════════════════════════════════════════
+//  OCR WORKER (Tesseract)
+// ═══════════════════════════════════════════════════
+async function initOCR() {
+  showLoading('Cargando motor OCR...');
+  try {
+    ocrWorker = await Tesseract.createWorker('eng', 1, {
+      logger: () => {}
+    });
+    await ocrWorker.setParameters({
+      tessedit_char_whitelist: '0123456789+() -.',
+      tessedit_pageseg_mode: '6',   // bloque de texto uniforme
+    });
+    ocrReady = true;
+    hideLoading();
+    document.getElementById('ocr-ind').textContent = '● OCR listo';
+    document.getElementById('ocr-ind').classList.add('active');
+  } catch (e) {
+    hideLoading();
+    showToast('✗ Error cargando OCR', 'err');
+  }
+}
+
+// ═══════════════════════════════════════════════════
+//  CÁMARA + SCANNER
+// ═══════════════════════════════════════════════════
+async function startScanner() {
+  showView('scanner');
+  sessionCount = 0; sessionDups = 0; sessionNew = 0;
+  document.getElementById('recent-chips').innerHTML =
+    '<span style="font-family:var(--mono);font-size:11px;color:var(--muted)">Buscando números...</span>';
+  document.getElementById('scan-badge').textContent = '0 encontrados';
+  document.getElementById('scan-status').textContent = 'Apunta a números de teléfono';
+  document.getElementById('scan-status').className = 'scan-status';
+
+  // Iniciar cámara
+  try {
+    videoStream = await navigator.mediaDevices.getUserMedia({
+      video: {
+        facingMode: { ideal: 'environment' },
+        width:  { ideal: 1280 },
+        height: { ideal: 720 }
+      },
+      audio: false
+    });
+    document.getElementById('video').srcObject = videoStream;
+  } catch (e) {
+    showToast('✗ Sin acceso a la cámara', 'err');
+    showHome(); return;
+  }
+
+  // Iniciar OCR si no está listo
+  if (!ocrReady) await initOCR();
+
+  // Loop de escaneo cada 1.8s
+  scanInterval = setInterval(doScan, 1800);
+}
+
+function stopScanner() {
+  if (scanInterval) { clearInterval(scanInterval); scanInterval = null; }
+  if (videoStream) {
+    videoStream.getTracks().forEach(t => t.stop());
+    videoStream = null;
+  }
+  torchOn = false;
+  document.getElementById('btn-torch').classList.remove('on');
+}
+
+async function doScan() {
+  if (!ocrReady || !videoStream) return;
+
+  const video  = document.getElementById('video');
+  const canvas = document.getElementById('canvas');
+  if (!video.videoWidth) return;
+
+  // Capturar frame
+  canvas.width  = video.videoWidth;
+  canvas.height = video.videoHeight;
+  const ctx = canvas.getContext('2d');
+  ctx.drawImage(video, 0, 0);
+
+  // Pre-procesar: alto contraste para OCR
+  const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  const data = imageData.data;
+  for (let i = 0; i < data.length; i += 4) {
+    const avg = (data[i]*0.3 + data[i+1]*0.59 + data[i+2]*0.11);
+    const val = avg > 128 ? 255 : 0;
+    data[i] = data[i+1] = data[i+2] = val;
+  }
+  ctx.putImageData(imageData, 0, 0);
+
+  const statusEl = document.getElementById('scan-status');
+  statusEl.textContent = 'Analizando...';
+  statusEl.className = 'scan-status detecting';
+
+  try {
+    const { data: { text } } = await ocrWorker.recognize(canvas);
+    const phones = extractPhones(text);
+
+    if (phones.length === 0) {
+      statusEl.textContent = 'Sin números — sigue apuntando';
+      statusEl.className = 'scan-status';
       return;
     }
 
-    const contacts = load();
-    // Set de dígitos ya existentes
-    const existingKeys = new Set(
-      contacts.map(c => c.phone.replace(/\D/g, ''))
-    );
+    // Guardar los nuevos
+    const existingKeys = dbPhoneSet();
+    const contacts = dbLoad();
+    let addedThisScan = 0;
 
-    let added = 0, dup = 0;
-    const newOnes = [];
-
-    for (const phone of found) {
-      fill.style.width = `${40 + (found.indexOf(phone) / found.length) * 50}%`;
-      const key = phone.replace(/\D/g, '');
-      if (existingKeys.has(key)) { dup++; continue; }
-      existingKeys.add(key);
-      const idx = contacts.length + added + 1;
-      const name = `Contacto${String(idx).padStart(5, '0')}`;
-      const item = { id: Date.now() + added, name, phone, addedAt: new Date().toISOString() };
-      contacts.push(item);
-      newOnes.push(item);
-      added++;
+    for (const phone of phones) {
+      const k = digitsOnly(phone);
+      if (existingKeys.has(k)) {
+        sessionDups++;
+        if (phone !== lastFlashPhone) showFlash(phone, true);
+        continue;
+      }
+      existingKeys.add(k);
+      const idx = contacts.length + 1;
+      contacts.push({
+        id:       Date.now() + Math.random(),
+        name:     `Contacto${String(idx).padStart(5,'0')}`,
+        phone,
+        addedAt:  new Date().toISOString(),
+        isNew:    true
+      });
+      sessionNew++;
+      sessionCount++;
+      addedThisScan++;
+      if (phone !== lastFlashPhone) showFlash(phone, false);
+      addRecentChip(phone);
+      lastFlashPhone = phone;
     }
 
-    save(contacts);
-    fill.style.width = '100%';
-    lastAdded = added;
+    if (addedThisScan > 0) {
+      dbSave(contacts);
+      statusEl.textContent = `✔ ${addedThisScan} número${addedThisScan>1?'s':''} guardado${addedThisScan>1?'s':''}`;
+      statusEl.className = 'scan-status found';
+      document.getElementById('scan-badge').textContent =
+        `${sessionCount} encontrado${sessionCount!==1?'s':''}`;
+      updateHomeCount();
+    } else {
+      statusEl.textContent = 'Números ya guardados — sigue buscando';
+      statusEl.className = 'scan-status';
+    }
 
-    setTimeout(() => {
-      bar.classList.remove('active');
-      fill.style.width = '0%';
-    }, 600);
-
-    // Actualizar contadores visibles
-    document.getElementById('cnt-new').textContent = added;
-    document.getElementById('cnt-dup').textContent = dup;
-    document.getElementById('cnt-total').textContent = contacts.length;
-    document.getElementById('storage-badge').textContent = `${contacts.length} guardados`;
-
-    // Flash de resultado
-    const flash = document.getElementById('result-flash');
-    flash.innerHTML = `
-      <div class="rf-line">✔ Encontrados: <span>${found.length}</span> números</div>
-      <div class="rf-line">✔ Nuevos guardados: <span>${added}</span></div>
-      <div class="rf-line">⏭ Duplicados omitidos: <span>${dup}</span></div>
-    `;
-    flash.style.display = 'block';
-
-    renderList(newOnes.map(n => n.id));
-    showToast(
-      added > 0 ? `✔ ${added} contacto${added>1?'s':''} guardado${added>1?'s':''}` : `⏭ Todo duplicado`,
-      added > 0 ? 'success' : 'warn'
-    );
-  }, 30);
+  } catch (e) {
+    statusEl.textContent = 'Error de lectura — reintentando...';
+    statusEl.className = 'scan-status';
+  }
 }
 
-function clearInput() {
-  document.getElementById('input-text').value = '';
-  document.getElementById('result-flash').style.display = 'none';
+// Flash de número detectado
+function showFlash(phone, isDup) {
+  const wrap = document.getElementById('detected-flash');
+  clearTimeout(flashTimer);
+  wrap.innerHTML = `<div class="det-chip${isDup?' dup':''}">
+    ${isDup ? '↩ ya guardado: ' : '✔ '}${phone}
+  </div>`;
+  flashTimer = setTimeout(() => { wrap.innerHTML = ''; }, 2200);
 }
 
-function clearAll() {
-  if (!confirm('¿Borrar TODOS los contactos guardados?')) return;
-  localStorage.removeItem(LS_KEY);
-  lastAdded = 0;
-  updateCounters();
-  renderList();
-  document.getElementById('result-flash').style.display = 'none';
-  showToast('🗑 Base de datos borrada', 'warn');
+// Chips recientes
+function addRecentChip(phone) {
+  const wrap = document.getElementById('recent-chips');
+  // Quitar placeholder si existe
+  const placeholder = wrap.querySelector('span');
+  if (placeholder) placeholder.remove();
+
+  const chip = document.createElement('div');
+  chip.className = 'recent-chip';
+  chip.textContent = phone;
+  wrap.insertBefore(chip, wrap.firstChild);
+
+  // Mantener max 12 chips
+  while (wrap.children.length > 12) wrap.removeChild(wrap.lastChild);
 }
 
-// ═══════════════════════════════════════════════════════════
-//  RENDER DE LISTA
-// ═══════════════════════════════════════════════════════════
-function renderList(newIds = []) {
-  const contacts = load();
-  const query = document.getElementById('search-box').value.trim().toLowerCase();
-  const list  = document.getElementById('contact-list');
+// Torch / linterna
+async function toggleTorch() {
+  if (!videoStream) return;
+  const track = videoStream.getVideoTracks()[0];
+  if (!track) return;
+  try {
+    torchOn = !torchOn;
+    await track.applyConstraints({ advanced: [{ torch: torchOn }] });
+    document.getElementById('btn-torch').classList.toggle('on', torchOn);
+  } catch {
+    showToast('Linterna no disponible', 'warn');
+    torchOn = false;
+  }
+}
 
-  const filtered = query
-    ? contacts.filter(c =>
-        c.phone.includes(query) || c.name.toLowerCase().includes(query)
-      )
+// ═══════════════════════════════════════════════════
+//  CONTACTS VIEW
+// ═══════════════════════════════════════════════════
+function renderContacts() {
+  const contacts = dbLoad();
+  const q = (document.getElementById('search')?.value || '').toLowerCase().trim();
+  const filtered = q
+    ? contacts.filter(c => c.phone.includes(q) || c.name.toLowerCase().includes(q))
     : contacts;
 
-  if (filtered.length === 0) {
-    list.innerHTML = `
-      <div class="empty-state">
-        <span class="icon">📭</span>
-        ${query ? 'Sin resultados para "' + query + '"' : 'Aún no hay contactos.\nPega texto y presiona EXTRAER NÚMEROS.'}
-      </div>`;
+  const list = document.getElementById('contact-list');
+
+  if (!filtered.length) {
+    list.innerHTML = `<div class="empty">
+      <span class="eicon">${q ? '🔍' : '📭'}</span>
+      ${q ? 'Sin resultados para "'+q+'"' : 'Todavía no hay contactos.<br>¡Escanea con la cámara!'}
+    </div>`;
     return;
   }
 
-  const newIdSet = new Set(newIds);
-
-  // Renderizar en orden inverso (más nuevos arriba)
-  const html = [...filtered].reverse().map(c => `
-    <div class="contact-item${newIdSet.has(c.id) ? ' new-item' : ''}" id="ci-${c.id}">
-      <span class="ci-idx">${c.name}</span>
-      <span class="ci-phone">${c.phone}</span>
-      <span class="ci-name">${formatDate(c.addedAt)}</span>
-      <button class="ci-del" onclick="deleteContact(${c.id})" title="Eliminar">×</button>
-    </div>
-  `).join('');
-
-  list.innerHTML = html;
+  list.innerHTML = [...filtered].reverse().map(c => {
+    const initials = c.name.slice(-2);
+    const d = new Date(c.addedAt);
+    const dateStr = `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+    return `
+      <div class="contact-item${c.isNew?' is-new':''}" id="ci-${c.id}">
+        <div class="ci-avatar">${initials}</div>
+        <div class="ci-info">
+          <div class="ci-name">${c.name}</div>
+          <div class="ci-phone">${c.phone}</div>
+        </div>
+        <div class="ci-date">${dateStr}</div>
+        <button class="ci-del" onclick="deleteContact('${c.id}')">×</button>
+      </div>`;
+  }).join('');
 }
 
-function formatDate(iso) {
-  const d = new Date(iso);
-  return `${d.getDate().toString().padStart(2,'0')}/${(d.getMonth()+1).toString().padStart(2,'0')} ${d.getHours().toString().padStart(2,'0')}:${d.getMinutes().toString().padStart(2,'0')}`;
+function updateStats() {
+  const total = dbLoad().length;
+  document.getElementById('s-total').textContent = total;
+  document.getElementById('s-new').textContent   = sessionNew;
+  document.getElementById('s-dup').textContent   = sessionDups;
+  document.getElementById('c-badge').textContent = total;
 }
 
 function deleteContact(id) {
-  let contacts = load();
-  contacts = contacts.filter(c => c.id !== id);
-  save(contacts);
+  let contacts = dbLoad().filter(c => String(c.id) !== String(id));
+  dbSave(contacts);
   document.getElementById(`ci-${id}`)?.remove();
-  updateCounters();
+  updateStats();
+  updateHomeCount();
   const list = document.getElementById('contact-list');
-  if (list.children.length === 0) renderList();
+  if (!list.children.length) renderContacts();
 }
 
-// ═══════════════════════════════════════════════════════════
-//  COUNTERS
-// ═══════════════════════════════════════════════════════════
-function updateCounters() {
-  const contacts = load();
-  const total = contacts.length;
-  document.getElementById('cnt-total').textContent = total;
-  document.getElementById('cnt-new').textContent = lastAdded;
-  document.getElementById('cnt-dup').textContent =
-    document.getElementById('cnt-dup').textContent; // se actualiza en extract()
-  document.getElementById('storage-badge').textContent = `${total} guardados`;
-}
-
-// ═══════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════
 //  EXPORTS
-// ═══════════════════════════════════════════════════════════
-function getTimestamp() {
+// ═══════════════════════════════════════════════════
+function ts() {
   const d = new Date();
   return `${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}_${String(d.getHours()).padStart(2,'0')}${String(d.getMinutes()).padStart(2,'0')}`;
 }
 
+function dlBlob(name, mime, content) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([content], {type: mime}));
+  a.download = name; a.click(); URL.revokeObjectURL(a.href);
+}
+
 function exportJSON() {
-  const contacts = load();
-  if (!contacts.length) { showToast('⚠ No hay datos', 'warn'); return; }
-  const data = JSON.stringify({ exported_at: new Date().toISOString(), total: contacts.length, contacts }, null, 2);
-  download(`wa_contacts_${getTimestamp()}.json`, 'application/json', data);
-  showToast('✔ JSON descargado', 'success');
+  const c = dbLoad();
+  if (!c.length) { showToast('Sin datos', 'warn'); return; }
+  dlBlob(`wa_contacts_${ts()}.json`, 'application/json',
+    JSON.stringify({ exported_at: new Date().toISOString(), total: c.length, contacts: c }, null, 2));
+  showToast('✔ JSON descargado', 'ok');
 }
 
 function exportCSV() {
-  const contacts = load();
-  if (!contacts.length) { showToast('⚠ No hay datos', 'warn'); return; }
-  const header = 'Nombre,Teléfono,Fecha\n';
-  const rows = contacts.map(c =>
-    `"${c.name}","${c.phone}","${c.addedAt}"`
-  ).join('\n');
-  // BOM para Excel
-  download(`wa_contacts_${getTimestamp()}.csv`, 'text/csv;charset=utf-8', '\uFEFF' + header + rows);
-  showToast('✔ CSV descargado', 'success');
+  const c = dbLoad();
+  if (!c.length) { showToast('Sin datos', 'warn'); return; }
+  const rows = ['Nombre,Teléfono,Fecha', ...c.map(x => `"${x.name}","${x.phone}","${x.addedAt}"`)];
+  dlBlob(`wa_contacts_${ts()}.csv`, 'text/csv', '\uFEFF' + rows.join('\n'));
+  showToast('✔ CSV descargado', 'ok');
 }
 
 function exportXLSX() {
-  const contacts = load();
-  if (!contacts.length) { showToast('⚠ No hay datos', 'warn'); return; }
-  if (typeof XLSX === 'undefined') { showToast('✗ Error cargando XLSX', 'warn'); return; }
-
-  const wsData = [
-    ['Nombre', 'Teléfono', 'Fecha agregado'],
-    ...contacts.map(c => [c.name, c.phone, c.addedAt])
-  ];
+  const c = dbLoad();
+  if (!c.length) { showToast('Sin datos', 'warn'); return; }
+  const ws = XLSX.utils.aoa_to_sheet([
+    ['Nombre','Teléfono','Fecha'],
+    ...c.map(x => [x.name, x.phone, x.addedAt])
+  ]);
+  ws['!cols'] = [{wch:16},{wch:18},{wch:22}];
   const wb = XLSX.utils.book_new();
-  const ws = XLSX.utils.aoa_to_sheet(wsData);
-
-  // Ancho de columnas
-  ws['!cols'] = [{ wch: 18 }, { wch: 20 }, { wch: 22 }];
-
   XLSX.utils.book_append_sheet(wb, ws, 'Contactos');
-  XLSX.writeFile(wb, `wa_contacts_${getTimestamp()}.xlsx`);
-  showToast('✔ XLSX descargado', 'success');
+  XLSX.writeFile(wb, `wa_contacts_${ts()}.xlsx`);
+  showToast('✔ XLSX descargado', 'ok');
 }
 
-function download(filename, mime, content) {
-  const blob = new Blob([content], { type: mime });
-  const a    = document.createElement('a');
-  a.href     = URL.createObjectURL(blob);
-  a.download = filename;
-  a.click();
-  URL.revokeObjectURL(a.href);
-}
-
-// ═══════════════════════════════════════════════════════════
-//  TOAST
-// ═══════════════════════════════════════════════════════════
-let toastTimer;
-function showToast(msg, type = 'success') {
+// ═══════════════════════════════════════════════════
+//  TOAST / LOADING
+// ═══════════════════════════════════════════════════
+let toastTmr;
+function showToast(msg, type='ok') {
   const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.className = `show ${type}`;
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => { t.classList.remove('show'); }, 2400);
+  t.textContent = msg; t.className = `show ${type}`;
+  clearTimeout(toastTmr);
+  toastTmr = setTimeout(() => t.classList.remove('show'), 2500);
 }
 
-// ═══════════════════════════════════════════════════════════
-//  TECLA ENTER con Ctrl/Cmd para extraer
-// ═══════════════════════════════════════════════════════════
-document.getElementById('input-text').addEventListener('keydown', e => {
-  if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') extract();
-});
+function showLoading(msg='Cargando...') {
+  const el = document.getElementById('loading');
+  document.getElementById('loading-msg').textContent = msg;
+  el.style.display = 'flex';
+}
+function hideLoading() {
+  document.getElementById('loading').style.display = 'none';
+}
 
-// ═══════════════════════════════════════════════════════════
-//  ACTUALIZAR CONTADOR DUP en tiempo real en extract()
-//  (Parchamos el valor correcto después de extract)
-// ═══════════════════════════════════════════════════════════
-const _origExtract = extract;
-// ya está inline arriba, no necesita override
-
-// ═══════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════
 //  INIT
-// ═══════════════════════════════════════════════════════════
-(function init() {
-  updateCounters();
-  renderList();
-
-  // Actualizar cnt-dup con el valor real del último lastAdded
-  // se hace dentro de extract()
-  document.getElementById('cnt-dup').textContent = '0';
-})();
-
-// Fix: actualizar cnt-dup dentro de extract()
-// (ya está en la función extract, solo nos aseguramos de refrescarlo)
-const _btnExtract = document.querySelector('.btn-extract');
+// ═══════════════════════════════════════════════════
+updateHomeCount();
 </script>
 </body>
 </html>
