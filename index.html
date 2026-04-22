@@ -3,665 +3,658 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>WA Cam Scanner</title>
-  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<title>WA Scanner</title>
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@600;700;800&display=swap');
 
-:root {
-  --bg:     #03080f;
-  --surf:   #090f1a;
-  --card:   #0e1825;
-  --card2:  #111f30;
-  --border: #1a2d44;
-  --green:  #00ff88;
-  --cyan:   #00d4ff;
-  --red:    #ff3b3b;
-  --yellow: #fbbf24;
-  --purple: #a855f7;
-  --text:   #eef4ff;
-  --muted:  #3d5a7a;
-  --mono:   'Space Mono', monospace;
-  --sans:   'Syne', sans-serif;
+:root{
+  --bg:#03080f; --s1:#08111e; --s2:#0d1a2a; --s3:#112030;
+  --bd:#1c3048; --g:#00ff88; --c:#00d4ff; --p:#a855f7;
+  --r:#ff3d3d; --y:#fbbf24; --tx:#eef6ff; --mt:#3d5a7a;
+  --f0:'Syne',sans-serif; --f1:'Space Mono',monospace;
 }
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{background:var(--bg);color:var(--tx);font-family:var(--f0);
+  height:100%;overflow:hidden;-webkit-tap-highlight-color:transparent}
 
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-html, body {
-  background: var(--bg); color: var(--text);
-  font-family: var(--sans); height: 100%;
-  overflow: hidden; user-select: none;
-  -webkit-tap-highlight-color: transparent;
-}
+.screen{display:none;flex-direction:column;height:100dvh;height:100vh;overflow:hidden}
+.screen.on{display:flex}
 
-/* ═══ VIEWS ═══ */
-.view { display: none; flex-direction: column; height: 100vh; overflow: hidden; }
-.view.active { display: flex; }
+/* ═══ HOME ═══ */
+#s-home{
+  align-items:center;justify-content:center;padding:28px 22px;
+  text-align:center;position:relative;
+  background:radial-gradient(ellipse at 50% 0%,rgba(0,212,255,.09) 0%,transparent 65%);
+}
+#s-home::before{content:'';position:absolute;inset:0;
+  background-image:linear-gradient(rgba(0,212,255,.028) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(0,212,255,.028) 1px,transparent 1px);
+  background-size:30px 30px;pointer-events:none}
 
-/* ═══════════════════════════════════════
-   HOME
-═══════════════════════════════════════ */
-#home {
-  align-items: center; justify-content: center;
-  padding: 24px 20px; text-align: center; position: relative;
-  background: radial-gradient(ellipse at 50% 20%, rgba(0,212,255,.07) 0%, transparent 65%);
+.logo-ring{
+  width:88px;height:88px;border-radius:24px;
+  background:conic-gradient(from 180deg,#00ff88,#00d4ff,#a855f7,#00ff88);
+  display:flex;align-items:center;justify-content:center;
+  margin:0 auto 22px;position:relative;z-index:1;
+  animation:hue 6s linear infinite;
+  box-shadow:0 0 40px rgba(0,255,136,.25),0 0 80px rgba(0,212,255,.12);
 }
-#home::before {
-  content: ''; position: absolute; inset: 0;
-  background-image:
-    linear-gradient(rgba(0,212,255,.025) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(0,212,255,.025) 1px, transparent 1px);
-  background-size: 28px 28px; pointer-events: none;
-}
+.logo-inner{width:78px;height:78px;border-radius:20px;background:var(--bg);
+  display:flex;align-items:center;justify-content:center;font-size:38px}
+@keyframes hue{to{filter:hue-rotate(360deg)}}
 
-.home-glow {
-  width: 90px; height: 90px; border-radius: 26px; margin: 0 auto 20px;
-  background: linear-gradient(135deg, #00ff88, #00d4ff);
-  display: flex; align-items: center; justify-content: center;
-  font-size: 42px; position: relative; z-index: 1;
-  box-shadow: 0 0 40px rgba(0,255,136,.3), 0 0 80px rgba(0,212,255,.15);
-  animation: breathe 3s ease-in-out infinite;
-}
-@keyframes breathe {
-  0%,100% { box-shadow: 0 0 40px rgba(0,255,136,.3), 0 0 80px rgba(0,212,255,.15); }
-  50%      { box-shadow: 0 0 60px rgba(0,255,136,.5), 0 0 100px rgba(0,212,255,.25); }
-}
+h1.app-title{font-size:28px;font-weight:800;line-height:1.05;
+  margin-bottom:10px;position:relative;z-index:1}
+h1.app-title b{background:linear-gradient(90deg,#00ff88,#00d4ff);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.app-sub{font-size:12px;color:var(--mt);font-family:var(--f1);
+  line-height:1.9;margin-bottom:28px;position:relative;z-index:1}
 
-.home-title {
-  font-size: 26px; font-weight: 800; line-height: 1.1;
-  margin-bottom: 8px; position: relative; z-index: 1;
-}
-.home-title em { color: var(--cyan); font-style: normal; }
-.home-sub {
-  font-size: 12px; color: var(--muted); font-family: var(--mono);
-  line-height: 1.8; margin-bottom: 36px; position: relative; z-index: 1;
-}
+.tags{display:flex;gap:7px;justify-content:center;margin-bottom:30px;
+  flex-wrap:wrap;position:relative;z-index:1}
+.tag{padding:4px 11px;border-radius:20px;font-size:10px;font-family:var(--f1);border:1px solid}
+.tg{border-color:rgba(0,255,136,.35);color:var(--g);background:rgba(0,255,136,.07)}
+.tc{border-color:rgba(0,212,255,.35);color:var(--c);background:rgba(0,212,255,.07)}
+.ty{border-color:rgba(251,191,36,.35);color:var(--y);background:rgba(251,191,36,.07)}
 
-.pill-row { display: flex; gap: 8px; justify-content: center; margin-bottom: 36px; position: relative; z-index: 1; }
-.pill {
-  padding: 5px 12px; border-radius: 20px; font-size: 11px;
-  font-family: var(--mono); border: 1px solid;
-}
-.pill-g { border-color: rgba(0,255,136,.3); color: var(--green); background: rgba(0,255,136,.06); }
-.pill-c { border-color: rgba(0,212,255,.3); color: var(--cyan);  background: rgba(0,212,255,.06); }
-.pill-y { border-color: rgba(251,191,36,.3); color: var(--yellow); background: rgba(251,191,36,.06); }
+.home-btns{display:flex;flex-direction:column;gap:10px;width:100%;max-width:310px;position:relative;z-index:1}
+.hbtn{display:flex;align-items:center;gap:14px;padding:15px 18px;
+  border-radius:16px;border:none;cursor:pointer;text-align:left;
+  transition:all .18s;width:100%}
+.hbtn:active{transform:scale(.97)}
+.hbtn .ico{font-size:26px;flex-shrink:0}
+.hbtn .lbl strong{display:block;font-size:14px;font-family:var(--f0);font-weight:700}
+.hbtn .lbl small{font-size:10px;font-family:var(--f1);opacity:.6}
+.hbtn-scan{background:linear-gradient(135deg,#00ff88,#00d4ff);color:#030811}
+.hbtn-scan:hover{filter:brightness(1.08);box-shadow:0 4px 20px rgba(0,255,136,.28)}
+.hbtn-list{background:var(--s2);border:1px solid var(--bd);color:var(--tx)}
+.hbtn-list:hover{border-color:var(--c)}
 
-.home-actions { display: flex; flex-direction: column; gap: 10px; width: 100%; max-width: 320px; position: relative; z-index: 1; }
+/* ═══ SCANNER ═══ */
+#s-scan{position:relative;background:#000}
+#video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
+#ocr-canvas{display:none}
 
-.btn-main {
-  display: flex; align-items: center; gap: 14px;
-  padding: 16px 20px; border-radius: 16px; border: none;
-  cursor: pointer; text-align: left; transition: all .18s; width: 100%;
-}
-.btn-main:active { transform: scale(.97); }
-.btn-main .bicon { font-size: 26px; flex-shrink: 0; }
-.btn-main .blabel strong { display: block; font-size: 15px; font-family: var(--sans); font-weight: 700; }
-.btn-main .blabel small { font-size: 10px; font-family: var(--mono); opacity: .65; }
+.ov{position:absolute;inset:0;z-index:10;display:flex;flex-direction:column;pointer-events:none}
 
-.btn-scan  { background: linear-gradient(135deg, #00ff88 0%, #00d4ff 100%); color: #030811; }
-.btn-scan:hover { filter: brightness(1.1); box-shadow: 0 4px 24px rgba(0,255,136,.3); }
-.btn-contacts { background: var(--card2); border: 1px solid var(--border); color: var(--text); }
-.btn-contacts:hover { border-color: var(--cyan); }
+.scan-top{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:14px 14px 10px;pointer-events:all;
+  background:linear-gradient(to bottom,rgba(0,0,0,.8) 0%,transparent 100%);
+}
+.scan-top-left{display:flex;align-items:center;gap:10px}
+.scan-title{font-size:13px;font-weight:700}
+.pdot{width:8px;height:8px;border-radius:50%;background:var(--g);
+  box-shadow:0 0 6px var(--g);animation:pdot 1.2s ease-in-out infinite}
+@keyframes pdot{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.35;transform:scale(.65)}}
+.scan-badge{font-family:var(--f1);font-size:11px;
+  background:rgba(0,255,136,.15);border:1px solid rgba(0,255,136,.4);
+  color:var(--g);padding:4px 11px;border-radius:20px}
+.btn-x{background:rgba(255,255,255,.12);border:none;cursor:pointer;
+  color:var(--tx);width:34px;height:34px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:18px;pointer-events:all;transition:background .15s}
+.btn-x:hover{background:rgba(255,61,61,.35)}
 
-/* ═══════════════════════════════════════
-   SCANNER
-═══════════════════════════════════════ */
-#scanner { position: relative; background: #000; overflow: hidden; }
+.vf-wrap{flex:1;display:flex;align-items:center;justify-content:center;padding:12px}
+.vf{width:100%;max-width:340px;aspect-ratio:2.4/1;position:relative;border-radius:10px}
+.vfc{position:absolute;width:20px;height:20px;border-color:var(--g);border-style:solid}
+.vfc.tl{top:0;left:0;border-width:3px 0 0 3px;border-radius:4px 0 0 0}
+.vfc.tr{top:0;right:0;border-width:3px 3px 0 0;border-radius:0 4px 0 0}
+.vfc.bl{bottom:0;left:0;border-width:0 0 3px 3px;border-radius:0 0 0 4px}
+.vfc.br{bottom:0;right:0;border-width:0 3px 3px 0;border-radius:0 0 4px 0}
+.beam{position:absolute;left:3px;right:3px;height:2px;
+  background:linear-gradient(90deg,transparent,var(--g),transparent);
+  box-shadow:0 0 10px var(--g),0 0 20px rgba(0,255,136,.4);
+  animation:beam 2.2s ease-in-out infinite}
+@keyframes beam{0%{top:3px}50%{top:calc(100% - 5px)}100%{top:3px}}
 
-#video {
-  position: absolute; inset: 0; width: 100%; height: 100%;
-  object-fit: cover; display: block;
-}
-#canvas { display: none; }
+.status-pill{text-align:center;padding:0 16px 6px;pointer-events:none}
+.spill{display:inline-flex;align-items:center;gap:6px;
+  font-family:var(--f1);font-size:11px;
+  background:rgba(0,0,0,.55);backdrop-filter:blur(6px);
+  padding:5px 14px;border-radius:20px;border:1px solid var(--bd);
+  color:rgba(255,255,255,.45);transition:all .25s}
+.spill.det{border-color:rgba(0,212,255,.5);color:var(--c)}
+.spill.ok{border-color:rgba(0,255,136,.5);color:var(--g)}
+.spill.dup{border-color:rgba(251,191,36,.5);color:var(--y)}
 
-/* Overlay de escaneo */
-.scan-overlay {
-  position: absolute; inset: 0; z-index: 10;
-  display: flex; flex-direction: column;
-  pointer-events: none;
+/* ── LIVE PANEL ── */
+.live-panel{
+  background:linear-gradient(to top,rgba(0,0,0,.94) 0%,rgba(0,0,0,.72) 85%,transparent 100%);
+  padding:10px 14px 20px;pointer-events:all;
+  max-height:52vh;display:flex;flex-direction:column;gap:8px;
 }
+.lp-hdr{display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.lp-title{font-size:10px;font-family:var(--f1);color:var(--mt);
+  text-transform:uppercase;letter-spacing:.7px}
+.lp-pills{display:flex;gap:7px}
+.lp-pill{font-family:var(--f1);font-size:10px;padding:2px 9px;
+  border-radius:10px;border:1px solid}
+.pp-g{border-color:rgba(0,255,136,.3);color:var(--g);background:rgba(0,255,136,.08)}
+.pp-y{border-color:rgba(251,191,36,.3);color:var(--y);background:rgba(251,191,36,.08)}
 
-/* Marco de enfoque central */
-.scan-frame-wrap {
-  flex: 1; display: flex; align-items: center; justify-content: center;
-  padding: 20px;
+.live-scroll{
+  display:flex;flex-direction:column;gap:5px;
+  overflow-y:auto;flex:1;
 }
-.scan-frame {
-  width: 100%; max-width: 340px; aspect-ratio: 16/7;
-  position: relative; border-radius: 12px;
-}
-.scan-frame::before, .scan-frame::after,
-.sf-br::before, .sf-br::after {
-  content: ''; position: absolute;
-  width: 22px; height: 22px; border-color: var(--green);
-  border-style: solid; border-radius: 3px;
-}
-.scan-frame::before { top: 0; left: 0; border-width: 3px 0 0 3px; }
-.scan-frame::after  { top: 0; right: 0; border-width: 3px 3px 0 0; }
-.sf-br::before { bottom: 0; left: 0; border-width: 0 0 3px 3px; }
-.sf-br::after  { bottom: 0; right: 0; border-width: 0 3px 3px 0; }
+.live-scroll::-webkit-scrollbar{width:2px}
+.live-scroll::-webkit-scrollbar-thumb{background:var(--bd);border-radius:2px}
 
-/* Línea de escaneo animada */
-.scan-line {
-  position: absolute; left: 3px; right: 3px; height: 2px;
-  background: linear-gradient(90deg, transparent, var(--green), transparent);
-  border-radius: 2px;
-  animation: scanAnim 2s ease-in-out infinite;
-  box-shadow: 0 0 8px var(--green);
+.le{
+  display:flex;align-items:center;gap:9px;
+  padding:8px 11px;border-radius:10px;
+  border:1px solid var(--bd);background:rgba(255,255,255,.04);
+  animation:ein .22s ease;flex-shrink:0;
 }
-@keyframes scanAnim {
-  0%   { top: 4px; opacity: 1; }
-  50%  { top: calc(100% - 6px); opacity: 1; }
-  100% { top: 4px; opacity: 1; }
-}
+.le.fresh{border-color:rgba(0,255,136,.45);background:rgba(0,255,136,.06);
+  box-shadow:0 0 10px rgba(0,255,136,.08)}
+.le.dupe{border-color:rgba(251,191,36,.3);background:rgba(251,191,36,.04)}
+@keyframes ein{from{opacity:0;transform:translateY(-5px)}to{opacity:1;transform:translateY(0)}}
 
-/* Barra superior del scanner */
-.scan-topbar {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 14px 16px 0; pointer-events: all;
-  background: linear-gradient(to bottom, rgba(0,0,0,.7) 0%, transparent 100%);
-}
-.scan-title { font-size: 14px; font-weight: 700; color: var(--text); }
-.scan-counter-badge {
-  background: rgba(0,255,136,.15); border: 1px solid rgba(0,255,136,.4);
-  color: var(--green); font-family: var(--mono); font-size: 11px;
-  padding: 4px 10px; border-radius: 20px;
-}
-.btn-close-scan {
-  background: rgba(255,255,255,.1); border: none; cursor: pointer;
-  color: var(--text); font-size: 20px; width: 34px; height: 34px;
-  border-radius: 50%; display: flex; align-items: center; justify-content: center;
-  pointer-events: all; transition: background .15s;
-}
-.btn-close-scan:hover { background: rgba(255,59,59,.3); }
+.le-ic{font-size:12px;flex-shrink:0}
+.le-ph{flex:1;font-family:var(--f1);font-size:13px;font-weight:700}
+.le.fresh .le-ph{color:var(--g)}
+.le.dupe  .le-ph{color:var(--y)}
+.le-nm{font-family:var(--f1);font-size:9px;color:var(--mt)}
+.le-nb{font-size:9px;padding:2px 6px;border-radius:7px;
+  background:rgba(0,255,136,.2);color:var(--g);font-family:var(--f1);flex-shrink:0}
+.le-tm{font-family:var(--f1);font-size:9px;color:var(--mt);flex-shrink:0}
 
-/* Status debajo del frame */
-.scan-status {
-  text-align: center; padding: 0 20px 8px;
-  font-size: 11px; font-family: var(--mono); color: rgba(255,255,255,.5);
+.btn-torch{
+  position:absolute;top:14px;right:56px;z-index:30;
+  background:rgba(255,255,255,.12);border:none;cursor:pointer;
+  color:var(--tx);width:34px;height:34px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:18px;transition:background .15s;pointer-events:all;
 }
-.scan-status.detecting { color: var(--cyan); }
-.scan-status.found     { color: var(--green); }
+.btn-torch.lit{background:rgba(251,191,36,.25);color:var(--y)}
 
-/* Número detectado — flash */
-#detected-flash {
-  position: absolute; bottom: 140px; left: 50%; transform: translateX(-50%);
-  z-index: 20; pointer-events: none;
-  display: flex; flex-direction: column; align-items: center; gap: 6px;
-  min-width: 200px;
-}
-.det-chip {
-  background: rgba(0,255,136,.12); border: 1px solid var(--green);
-  color: var(--green); font-family: var(--mono); font-size: 15px; font-weight: 700;
-  padding: 8px 18px; border-radius: 30px;
-  backdrop-filter: blur(8px);
-  box-shadow: 0 0 20px rgba(0,255,136,.3);
-  animation: chipIn .25s ease forwards;
-  white-space: nowrap;
-}
-.det-chip.dup {
-  border-color: var(--yellow); color: var(--yellow);
-  background: rgba(251,191,36,.1);
-  box-shadow: 0 0 20px rgba(251,191,36,.2);
-}
-@keyframes chipIn {
-  from { opacity: 0; transform: translateY(10px) scale(.9); }
-  to   { opacity: 1; transform: translateY(0) scale(1); }
-}
+/* ═══ CONTACTS ═══ */
+#s-list{background:var(--s1)}
+.list-top{background:var(--s2);border-bottom:1px solid var(--bd);
+  padding:12px 14px;flex-shrink:0;display:flex;align-items:center;gap:10px}
+.btn-back{background:none;border:none;cursor:pointer;color:var(--c);
+  font-size:24px;padding:2px;line-height:1;flex-shrink:0}
+.list-top h2{font-size:15px;font-weight:700;flex:1}
+.ct-badge{font-family:var(--f1);font-size:11px;
+  background:rgba(0,255,136,.1);border:1px solid rgba(0,255,136,.28);
+  color:var(--g);padding:3px 10px;border-radius:14px}
 
-/* Barra inferior del scanner con últimos encontrados */
-.scan-bottom {
-  background: linear-gradient(to top, rgba(0,0,0,.9) 0%, transparent 100%);
-  padding: 20px 16px 20px; pointer-events: all;
-  min-height: 120px;
-}
-.scan-bottom-label {
-  font-size: 10px; font-family: var(--mono); color: var(--muted);
-  text-transform: uppercase; letter-spacing: .6px; margin-bottom: 8px;
-}
-.recent-chips {
-  display: flex; flex-wrap: wrap; gap: 6px;
-  max-height: 70px; overflow: hidden;
-}
-.recent-chip {
-  font-family: var(--mono); font-size: 11px;
-  padding: 4px 10px; border-radius: 16px;
-  border: 1px solid rgba(0,212,255,.3);
-  color: var(--cyan); background: rgba(0,212,255,.07);
-  animation: chipIn .2s ease;
-}
+.stat-bar{display:grid;grid-template-columns:repeat(4,1fr);
+  border-bottom:1px solid var(--bd);flex-shrink:0}
+.sc{padding:9px 4px;text-align:center;border-right:1px solid var(--bd)}
+.sc:last-child{border-right:none}
+.sc .n{font-family:var(--f1);font-size:17px;font-weight:700;line-height:1}
+.sc .l{font-size:9px;color:var(--mt);text-transform:uppercase;letter-spacing:.4px;margin-top:2px}
+.nt{color:var(--c)} .ns{color:var(--g)} .nd{color:var(--y)} .nr{color:var(--r)}
 
-/* Botón de flash/torch */
-.btn-torch {
-  position: absolute; top: 14px; right: 56px; z-index: 30;
-  background: rgba(255,255,255,.1); border: none; cursor: pointer;
-  color: var(--text); font-size: 20px; width: 34px; height: 34px;
-  border-radius: 50%; display: flex; align-items: center; justify-content: center;
-  transition: background .15s; pointer-events: all;
-}
-.btn-torch.on { background: rgba(251,191,36,.25); color: var(--yellow); }
+.srch-wrap{padding:9px 12px;border-bottom:1px solid var(--bd);flex-shrink:0}
+.srch{width:100%;background:var(--s3);border:1px solid var(--bd);
+  border-radius:10px;padding:8px 13px;font-family:var(--f1);
+  font-size:12px;color:var(--tx);outline:none;transition:border-color .15s}
+.srch:focus{border-color:var(--c)}
+.srch::placeholder{color:var(--mt)}
 
-/* FPS / OCR indicator */
-.ocr-indicator {
-  position: absolute; top: 58px; left: 50%; transform: translateX(-50%);
-  font-family: var(--mono); font-size: 10px; color: rgba(0,255,136,.5);
-  background: rgba(0,0,0,.4); padding: 2px 8px; border-radius: 10px;
-  z-index: 20; pointer-events: none; transition: color .3s;
-}
-.ocr-indicator.active { color: var(--green); }
+.clist{flex:1;overflow-y:auto;padding:8px 12px 16px}
+.clist::-webkit-scrollbar{width:3px}
+.clist::-webkit-scrollbar-thumb{background:var(--bd);border-radius:2px}
 
-/* ═══════════════════════════════════════
-   CONTACTS VIEW
-═══════════════════════════════════════ */
-#contacts {
-  background: var(--surf);
-  overflow: hidden;
-}
+.ci{display:flex;align-items:center;gap:10px;padding:10px 12px;
+  border-radius:12px;border:1px solid var(--bd);background:var(--s2);
+  margin-bottom:6px;transition:border-color .15s;animation:ein .2s ease}
+.ci.new{border-color:rgba(0,255,136,.38);background:rgba(0,255,136,.04)}
+.ci:hover{border-color:var(--c)}
+.ci-av{width:36px;height:36px;border-radius:10px;flex-shrink:0;
+  background:linear-gradient(135deg,var(--c),var(--p));
+  display:flex;align-items:center;justify-content:center;
+  font-size:12px;font-weight:700;color:#fff;font-family:var(--f1)}
+.ci-info{flex:1;min-width:0}
+.ci-name{font-size:10px;color:var(--mt);font-family:var(--f1);margin-bottom:2px}
+.ci-ph{font-family:var(--f1);font-size:14px;font-weight:700;color:var(--c)}
+.ci-dt{font-size:9px;color:var(--mt);font-family:var(--f1);flex-shrink:0;text-align:right}
+.ci-rm{background:none;border:none;cursor:pointer;color:var(--mt);
+  font-size:20px;padding:2px 4px;border-radius:5px;transition:color .15s;flex-shrink:0}
+.ci-rm:hover{color:var(--r)}
 
-.contacts-header {
-  background: var(--card); border-bottom: 1px solid var(--border);
-  padding: 14px 16px; flex-shrink: 0;
-  display: flex; align-items: center; gap: 10px;
-}
-.btn-back {
-  background: none; border: none; cursor: pointer; color: var(--cyan);
-  font-size: 22px; padding: 2px 6px; border-radius: 6px;
-  transition: background .15s; flex-shrink: 0;
-}
-.btn-back:hover { background: rgba(0,212,255,.1); }
-.contacts-header h2 { font-size: 15px; font-weight: 700; flex: 1; }
-.contacts-header .hbadge {
-  font-family: var(--mono); font-size: 11px;
-  background: rgba(0,255,136,.1); border: 1px solid rgba(0,255,136,.25);
-  color: var(--green); padding: 3px 10px; border-radius: 16px;
-}
+.empty{padding:50px 20px;text-align:center;
+  color:var(--mt);font-family:var(--f1);font-size:12px;line-height:2}
+.empty .ei{font-size:40px;display:block;margin-bottom:12px}
 
-/* Stats row */
-.stats-row {
-  display: grid; grid-template-columns: repeat(3,1fr);
-  gap: 0; border-bottom: 1px solid var(--border); flex-shrink: 0;
-}
-.stat-cell {
-  padding: 10px 8px; text-align: center;
-  border-right: 1px solid var(--border);
-}
-.stat-cell:last-child { border-right: none; }
-.stat-cell .snum {
-  font-family: var(--mono); font-size: 20px; font-weight: 700; line-height: 1;
-}
-.stat-cell .slbl { font-size: 9px; color: var(--muted); text-transform: uppercase; letter-spacing: .4px; margin-top: 2px; }
-.s-total .snum { color: var(--cyan); }
-.s-new   .snum { color: var(--green); }
-.s-sess  .snum { color: var(--yellow); }
-
-/* Search */
-.search-wrap {
-  padding: 10px 14px; border-bottom: 1px solid var(--border); flex-shrink: 0;
-}
-.search-input {
-  width: 100%; background: var(--card2); border: 1px solid var(--border);
-  border-radius: 10px; padding: 9px 14px; font-family: var(--mono);
-  font-size: 13px; color: var(--text); outline: none;
-  transition: border-color .15s;
-}
-.search-input:focus { border-color: var(--cyan); }
-.search-input::placeholder { color: var(--muted); }
-
-/* List */
-.contact-list {
-  flex: 1; overflow-y: auto; padding: 8px 14px 20px;
-}
-.contact-list::-webkit-scrollbar { width: 3px; }
-.contact-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
-
-.contact-item {
-  display: flex; align-items: center; gap: 10px;
-  padding: 11px 12px; border-radius: 12px;
-  border: 1px solid var(--border); background: var(--card);
-  margin-bottom: 6px; transition: border-color .15s;
-  animation: itemSlide .2s ease;
-}
-@keyframes itemSlide {
-  from { opacity: 0; transform: translateX(-8px); }
-  to   { opacity: 1; transform: translateX(0); }
-}
-.contact-item.is-new { border-color: rgba(0,255,136,.35); background: rgba(0,255,136,.04); }
-.contact-item:hover { border-color: var(--cyan); }
-
-.ci-avatar {
-  width: 36px; height: 36px; border-radius: 10px; flex-shrink: 0;
-  background: linear-gradient(135deg, var(--cyan), var(--purple));
-  display: flex; align-items: center; justify-content: center;
-  font-size: 14px; font-weight: 700; color: #fff; font-family: var(--mono);
-}
-.ci-info { flex: 1; min-width: 0; }
-.ci-name { font-size: 10px; color: var(--muted); font-family: var(--mono); margin-bottom: 2px; }
-.ci-phone { font-family: var(--mono); font-size: 14px; font-weight: 700; color: var(--cyan); }
-.ci-date { font-size: 9px; color: var(--muted); font-family: var(--mono); text-align: right; }
-.ci-del {
-  background: none; border: none; cursor: pointer; color: var(--muted);
-  font-size: 18px; padding: 2px 5px; border-radius: 5px; transition: color .15s; flex-shrink: 0;
-}
-.ci-del:hover { color: var(--red); }
-
-/* Export section */
-.export-wrap {
-  background: var(--card); border-top: 1px solid var(--border);
-  padding: 12px 14px; flex-shrink: 0;
-}
-.export-wrap p { font-size: 10px; font-family: var(--mono); color: var(--muted); margin-bottom: 8px; text-transform: uppercase; letter-spacing: .5px; }
-.export-btns { display: flex; gap: 8px; }
-.btn-exp {
-  flex: 1; padding: 10px 6px; border-radius: 10px;
-  border: 1px solid var(--border); background: var(--card2);
-  font-family: var(--mono); font-size: 11px; font-weight: 700;
-  cursor: pointer; transition: all .15s;
-  display: flex; flex-direction: column; align-items: center; gap: 3px;
-}
-.btn-exp:active { transform: scale(.96); }
-.btn-exp .eicon { font-size: 16px; }
-.e-json { color: var(--yellow); } .e-json:hover { border-color: var(--yellow); background: rgba(251,191,36,.07); }
-.e-csv  { color: var(--green);  } .e-csv:hover  { border-color: var(--green);  background: rgba(0,255,136,.07); }
-.e-xlsx { color: var(--purple); } .e-xlsx:hover { border-color: var(--purple); background: rgba(168,85,247,.07); }
-
-/* Empty state */
-.empty {
-  padding: 50px 20px; text-align: center;
-  color: var(--muted); font-family: var(--mono); font-size: 12px; line-height: 2;
-}
-.empty .eicon { font-size: 40px; display: block; margin-bottom: 12px; }
+.exp-bar{background:var(--s2);border-top:1px solid var(--bd);
+  padding:11px 12px;flex-shrink:0}
+.exp-bar p{font-size:10px;font-family:var(--f1);color:var(--mt);
+  text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px}
+.exp-btns{display:flex;gap:7px}
+.ebtn{flex:1;padding:10px 4px;border-radius:10px;border:1px solid var(--bd);
+  background:var(--s3);font-family:var(--f1);font-size:11px;font-weight:700;
+  cursor:pointer;transition:all .15s;display:flex;flex-direction:column;
+  align-items:center;gap:3px}
+.ebtn:active{transform:scale(.96)}
+.ebtn .ei{font-size:15px}
+.ej{color:var(--y)} .ej:hover{border-color:var(--y);background:rgba(251,191,36,.07)}
+.ec{color:var(--g)} .ec:hover{border-color:var(--g);background:rgba(0,255,136,.07)}
+.ex{color:var(--p)} .ex:hover{border-color:var(--p);background:rgba(168,85,247,.07)}
 
 /* ═══ TOAST ═══ */
-#toast {
-  position: fixed; bottom: 24px; left: 50%;
-  transform: translateX(-50%) translateY(60px);
-  background: var(--card2); border: 1px solid var(--border);
-  color: var(--text); font-family: var(--mono); font-size: 12px;
-  padding: 10px 20px; border-radius: 30px;
-  box-shadow: 0 4px 30px rgba(0,0,0,.6);
-  transition: transform .3s, opacity .3s; opacity: 0;
-  z-index: 9999; white-space: nowrap; pointer-events: none;
-}
-#toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
-#toast.ok   { border-color: var(--green); color: var(--green); }
-#toast.warn { border-color: var(--yellow); color: var(--yellow); }
-#toast.err  { border-color: var(--red); color: var(--red); }
+#toast{position:fixed;bottom:22px;left:50%;
+  transform:translateX(-50%) translateY(60px);
+  background:var(--s3);border:1px solid var(--bd);
+  color:var(--tx);font-family:var(--f1);font-size:12px;
+  padding:9px 20px;border-radius:30px;box-shadow:0 4px 28px rgba(0,0,0,.7);
+  transition:transform .28s,opacity .28s;opacity:0;
+  z-index:9999;white-space:nowrap;pointer-events:none}
+#toast.on{transform:translateX(-50%) translateY(0);opacity:1}
+#toast.tok{border-color:var(--g);color:var(--g)}
+#toast.twn{border-color:var(--y);color:var(--y)}
+#toast.ter{border-color:var(--r);color:var(--r)}
 
-/* ═══ LOADING OVERLAY ═══ */
-#loading {
-  position: fixed; inset: 0; background: rgba(3,8,15,.92);
-  display: flex; flex-direction: column;
-  align-items: center; justify-content: center; z-index: 9998;
-  display: none;
-}
-#loading .spin {
-  width: 44px; height: 44px; border: 3px solid var(--border);
-  border-top-color: var(--cyan); border-radius: 50%;
-  animation: spin .7s linear infinite; margin-bottom: 14px;
-}
-@keyframes spin { to { transform: rotate(360deg); } }
-#loading p { font-family: var(--mono); font-size: 12px; color: var(--muted); }
+/* ═══ LOADER ═══ */
+#ldr{position:fixed;inset:0;background:rgba(3,8,15,.95);
+  flex-direction:column;align-items:center;justify-content:center;
+  z-index:9998;display:none;gap:14px}
+#ldr.on{display:flex}
+.ldr-ring{width:48px;height:48px;border:3px solid var(--bd);
+  border-top-color:var(--c);border-radius:50%;animation:spin .75s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+#ldr p{font-family:var(--f1);font-size:12px;color:var(--mt)}
+#ldr-bar{width:200px;height:3px;background:var(--bd);border-radius:2px;overflow:hidden}
+#ldr-fill{height:100%;width:0%;background:linear-gradient(90deg,var(--g),var(--c));
+  border-radius:2px;transition:width .3s}
 </style>
 </head>
 <body>
 
-<!-- ═══════════ HOME ═══════════ -->
-<div class="view active" id="home">
-  <div class="home-glow">📱</div>
-  <div class="home-title">WA <em>CAM</em><br>SCANNER</div>
-  <div class="home-sub">
-    Apunta la cámara a cualquier<br>
-    pantalla o papel con números<br>
-    de WhatsApp y los extrae solo.
+<!-- HOME -->
+<div class="screen on" id="s-home">
+  <div class="logo-ring"><div class="logo-inner">📱</div></div>
+  <h1 class="app-title">WA <b>CAM</b><br>SCANNER</h1>
+  <p class="app-sub">
+    Apunta la cámara a pantallas o papel<br>
+    con números de WhatsApp.<br>
+    Los extrae y guarda automáticamente.
+  </p>
+  <div class="tags">
+    <span class="tag tg">✓ Sin duplicados</span>
+    <span class="tag tc">✓ Tiempo real</span>
+    <span class="tag ty">✓ OCR rápido</span>
   </div>
-
-  <div class="pill-row">
-    <span class="pill pill-g">✓ Sin duplicados</span>
-    <span class="pill pill-c">✓ Tiempo real</span>
-    <span class="pill pill-y">✓ OCR</span>
-  </div>
-
-  <div class="home-actions">
-    <button class="btn-main btn-scan" onclick="startScanner()">
-      <span class="bicon">📷</span>
-      <span class="blabel">
+  <div class="home-btns">
+    <button class="hbtn hbtn-scan" onclick="goScan()">
+      <span class="ico">📷</span>
+      <span class="lbl">
         <strong>ESCANEAR CON CÁMARA</strong>
-        <small>OCR en tiempo real</small>
+        <small>Extracción automática en vivo</small>
       </span>
     </button>
-    <button class="btn-main btn-contacts" onclick="showContacts()">
-      <span class="bicon">📋</span>
-      <span class="blabel">
+    <button class="hbtn hbtn-list" onclick="goList()">
+      <span class="ico">📋</span>
+      <span class="lbl">
         <strong>VER CONTACTOS</strong>
-        <small id="home-count">0 guardados</small>
+        <small id="home-sub">0 guardados en total</small>
       </span>
     </button>
   </div>
 </div>
 
-<!-- ═══════════ SCANNER ═══════════ -->
-<div class="view" id="scanner">
+<!-- SCANNER -->
+<div class="screen" id="s-scan">
   <video id="video" autoplay playsinline muted></video>
-  <canvas id="canvas"></canvas>
+  <canvas id="ocr-canvas"></canvas>
 
-  <div class="scan-overlay">
-    <!-- Top bar -->
-    <div class="scan-topbar">
-      <div class="scan-title">📷 Escaneando...</div>
-      <span class="scan-counter-badge" id="scan-badge">0 encontrados</span>
-      <button class="btn-close-scan" onclick="stopScanner()">✕</button>
+  <div class="ov">
+    <div class="scan-top">
+      <div class="scan-top-left">
+        <div class="pdot"></div>
+        <span class="scan-title">ESCANEANDO</span>
+      </div>
+      <span class="scan-badge" id="scan-badge">0 números</span>
+      <button class="btn-x" onclick="goHome()">✕</button>
     </div>
 
-    <!-- OCR indicator -->
-    <div class="ocr-indicator" id="ocr-ind">● OCR activo</div>
-
-    <!-- Frame de enfoque -->
-    <div class="scan-frame-wrap">
-      <div class="scan-frame">
-        <div class="sf-br"></div>
-        <div class="scan-line"></div>
+    <div class="vf-wrap">
+      <div class="vf">
+        <div class="vfc tl"></div><div class="vfc tr"></div>
+        <div class="vfc bl"></div><div class="vfc br"></div>
+        <div class="beam"></div>
       </div>
     </div>
 
-    <!-- Status -->
-    <div class="scan-status" id="scan-status">Apunta a números de teléfono</div>
+    <div class="status-pill">
+      <span class="spill" id="spill">⬤ Listo — apunta a números</span>
+    </div>
 
-    <!-- Número detectado flash -->
-    <div id="detected-flash"></div>
-
-    <!-- Bottom: últimos números -->
-    <div class="scan-bottom">
-      <div class="scan-bottom-label">Últimos detectados esta sesión</div>
-      <div class="recent-chips" id="recent-chips">
-        <span style="font-family:var(--mono);font-size:11px;color:var(--muted)">Aún no hay números...</span>
+    <!-- PANEL EN VIVO -->
+    <div class="live-panel">
+      <div class="lp-hdr">
+        <span class="lp-title">📞 Capturados en vivo</span>
+        <div class="lp-pills">
+          <span class="lp-pill pp-g" id="lp-new">0 nuevos</span>
+          <span class="lp-pill pp-y" id="lp-dup">0 dup.</span>
+        </div>
+      </div>
+      <div class="live-scroll" id="live-scroll">
+        <div style="font-family:var(--f1);font-size:11px;color:var(--mt);padding:6px 2px">
+          Los números aparecerán aquí en tiempo real...
+        </div>
       </div>
     </div>
   </div>
 
-  <!-- Torch -->
-  <button class="btn-torch" id="btn-torch" onclick="toggleTorch()" title="Flash">🔦</button>
+  <button class="btn-torch" id="btn-torch" onclick="toggleTorch()">🔦</button>
 </div>
 
-<!-- ═══════════ CONTACTS ═══════════ -->
-<div class="view" id="contacts" style="display:none;flex-direction:column;">
-
-  <div class="contacts-header">
-    <button class="btn-back" onclick="showHome()">‹</button>
-    <h2>Contactos Extraídos</h2>
-    <span class="hbadge" id="c-badge">0</span>
+<!-- CONTACTS -->
+<div class="screen" id="s-list">
+  <div class="list-top">
+    <button class="btn-back" onclick="goHome()">‹</button>
+    <h2>Contactos Guardados</h2>
+    <span class="ct-badge" id="ct-badge">0</span>
   </div>
-
-  <div class="stats-row">
-    <div class="stat-cell s-total"><div class="snum" id="s-total">0</div><div class="slbl">Total</div></div>
-    <div class="stat-cell s-new">  <div class="snum" id="s-new">0</div>  <div class="slbl">Esta sesión</div></div>
-    <div class="stat-cell s-sess"> <div class="snum" id="s-dup">0</div>  <div class="slbl">Duplicados</div></div>
+  <div class="stat-bar">
+    <div class="sc"><div class="n nt" id="n-tot">0</div><div class="l">Total</div></div>
+    <div class="sc"><div class="n ns" id="n-ses">0</div><div class="l">Sesión</div></div>
+    <div class="sc"><div class="n nd" id="n-dup">0</div><div class="l">Duplicados</div></div>
+    <div class="sc"><div class="n nr" id="n-del">0</div><div class="l">Eliminados</div></div>
   </div>
-
-  <div class="search-wrap">
-    <input class="search-input" id="search" placeholder="🔍  Buscar número o nombre..." oninput="renderContacts()" autocomplete="off">
+  <div class="srch-wrap">
+    <input class="srch" id="srch" placeholder="🔍  Buscar número o nombre..."
+      oninput="renderList()" autocomplete="off" type="search">
   </div>
-
-  <div class="contact-list" id="contact-list"></div>
-
-  <div class="export-wrap">
-    <p>⬇ Descargar</p>
-    <div class="export-btns">
-      <button class="btn-exp e-json" onclick="exportJSON()"><span class="eicon">{ }</span>JSON</button>
-      <button class="btn-exp e-csv"  onclick="exportCSV()"><span class="eicon">📊</span>CSV</button>
-      <button class="btn-exp e-xlsx" onclick="exportXLSX()"><span class="eicon">📗</span>XLSX</button>
+  <div class="clist" id="clist"></div>
+  <div class="exp-bar">
+    <p>⬇ Exportar base de datos</p>
+    <div class="exp-btns">
+      <button class="ebtn ej" onclick="expJSON()"><span class="ei">{ }</span>JSON</button>
+      <button class="ebtn ec" onclick="expCSV()"><span class="ei">📊</span>CSV</button>
+      <button class="ebtn ex" onclick="expXLSX()"><span class="ei">📗</span>XLSX</button>
     </div>
   </div>
 </div>
 
-<!-- Loading -->
-<div id="loading"><div class="spin"></div><p id="loading-msg">Iniciando OCR...</p></div>
-
-<!-- Toast -->
+<!-- Loader -->
+<div id="ldr">
+  <div class="ldr-ring"></div>
+  <p id="ldr-msg">Cargando OCR...</p>
+  <div id="ldr-bar"><div id="ldr-fill"></div></div>
+</div>
 <div id="toast"></div>
+
 <script>
-// ═══════════════════════════════════════════════════
-// STATE
-// ═══════════════════════════════════════════════════
-let ocrWorker = null;
-let ocrReady = false;
-let scanInterval = null;
-let videoStream = null;
+/* ─── DB ─── */
+const KEY='wa_v5';
+const db={
+  all(){try{return JSON.parse(localStorage.getItem(KEY))||[]}catch{return[]}},
+  save(d){localStorage.setItem(KEY,JSON.stringify(d))},
+  phones(){return new Set(this.all().map(c=>dg(c.phone)))}
+};
+function dg(s){return(s||'').replace(/\D/g,'')}
+function pad(n,w=5){return String(n).padStart(w,'0')}
 
-// ═══════════════════════════════════════════════════
-// OCR INIT (VERSIÓN CORRECTA)
-// ═══════════════════════════════════════════════════
-async function initOCR() {
-  showLoading('Cargando OCR...');
-  try {
-    ocrWorker = await Tesseract.createWorker({
-      logger: m => {
-        if (m.status === 'recognizing text') {
-          document.getElementById('ocr-ind').textContent =
-            `OCR ${Math.round(m.progress * 100)}%`;
-        }
+/* ─── PHONE REGEX ─── */
+const RE=/(?:(?:\+|00)\s*\d{1,3}[\s.\-()*]*)?\(?\d{1,4}\)?[\s.\-]*\d{2,5}[\s.\-]*\d{2,5}(?:[\s.\-]*\d{1,5})?/g;
+function normPhone(r){
+  let p=r.replace(/[^\d+]/g,'');
+  if(p.startsWith('00'))p='+'+p.slice(2);
+  const d=p.replace(/\D/g,'');
+  if(d.length<7||d.length>15)return null;
+  return p.startsWith('+')?p:d;
+}
+function extractPhones(txt){
+  const ms=txt.match(RE)||[];
+  const seen=new Set(),res=[];
+  for(const m of ms){const n=normPhone(m.trim());if(!n)continue;const k=dg(n);if(!seen.has(k)){seen.add(k);res.push(n)}}
+  return res;
+}
+
+/* ─── STATE ─── */
+let sesNew=0,sesDup=0,sesDel=0;
+let scanLoop=null,stream=null,torchOn=false;
+let ocrWorker=null,ocrReady=false;
+
+/* ─── VIEWS ─── */
+function show(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('on'));
+  document.getElementById(id).classList.add('on');
+}
+function goHome(){stopScan();show('s-home');document.getElementById('home-sub').textContent=db.all().length+' guardados en total'}
+function goList(){show('s-list');renderList();refreshStats()}
+
+/* ─── OCR LOAD (diferida) ─── */
+async function loadOCR(){
+  if(ocrReady)return true;
+  showLdr('Cargando motor OCR (solo la primera vez)...',5);
+  return new Promise(res=>{
+    const s=document.createElement('script');
+    s.src='https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/4.1.1/tesseract.min.js';
+    s.onload=async()=>{
+      showLdr('Iniciando OCR...',40);
+      try{
+        ocrWorker=await Tesseract.createWorker('eng',1,{
+          logger:m=>{
+            if(m.status==='loading tesseract core')ldrF(20);
+            else if(m.status==='loading language traineddata')ldrF(65);
+            else if(m.status==='initialized api')ldrF(95);
+          }
+        });
+        await ocrWorker.setParameters({
+          tessedit_char_whitelist:'0123456789+().- ',
+          tessedit_pageseg_mode:'6'
+        });
+        ocrReady=true;ldrF(100);
+        setTimeout(hideLdr,350);res(true);
+      }catch(e){hideLdr();toast('✗ Error OCR','ter');res(false)}
+    };
+    s.onerror=()=>{hideLdr();toast('✗ Sin conexión','ter');res(false)};
+    document.head.appendChild(s);
+  });
+}
+function showLdr(msg,p){
+  const el=document.getElementById('ldr');
+  el.classList.add('on');
+  document.getElementById('ldr-msg').textContent=msg;
+  ldrF(p);
+}
+function ldrF(p){document.getElementById('ldr-fill').style.width=p+'%'}
+function hideLdr(){document.getElementById('ldr').classList.remove('on')}
+
+/* ─── SCANNER ─── */
+async function goScan(){
+  show('s-scan');
+  sesNew=0;sesDup=0;
+  document.getElementById('scan-badge').textContent='0 números';
+  document.getElementById('lp-new').textContent='0 nuevos';
+  document.getElementById('lp-dup').textContent='0 dup.';
+  const ls=document.getElementById('live-scroll');
+  ls.innerHTML='<div style="font-family:var(--f1);font-size:11px;color:var(--mt);padding:6px 2px">Los números aparecerán aquí en tiempo real...</div>';
+  spill('⬤ Listo — apunta a números','');
+
+  try{
+    stream=await navigator.mediaDevices.getUserMedia({
+      video:{facingMode:{ideal:'environment'},width:{ideal:1280},height:{ideal:720}},audio:false
+    });
+    document.getElementById('video').srcObject=stream;
+  }catch(e){toast('✗ Sin acceso a cámara','ter');goHome();return}
+
+  const ok=await loadOCR();
+  if(!ok){goHome();return}
+
+  scanLoop=setInterval(doOCR,1700);
+}
+
+function stopScan(){
+  if(scanLoop){clearInterval(scanLoop);scanLoop=null}
+  if(stream){stream.getTracks().forEach(t=>t.stop());stream=null}
+  torchOn=false;
+  document.getElementById('btn-torch').classList.remove('lit');
+}
+
+async function doOCR(){
+  if(!ocrReady||!stream)return;
+  const vid=document.getElementById('video');
+  const cvs=document.getElementById('ocr-canvas');
+  if(!vid.videoWidth)return;
+
+  cvs.width=vid.videoWidth;cvs.height=vid.videoHeight;
+  const ctx=cvs.getContext('2d');
+  ctx.drawImage(vid,0,0);
+
+  // Umbralización para mejor OCR de números
+  const id=ctx.getImageData(0,0,cvs.width,cvs.height);
+  const d=id.data;
+  for(let i=0;i<d.length;i+=4){
+    const g=d[i]*.299+d[i+1]*.587+d[i+2]*.114;
+    const v=g>130?255:0;
+    d[i]=d[i+1]=d[i+2]=v;
+  }
+  ctx.putImageData(id,0,0);
+
+  spill('◌ Analizando...','det');
+  try{
+    const{data:{text}}=await ocrWorker.recognize(cvs);
+    const phones=extractPhones(text);
+    if(!phones.length){spill('⬤ Sin números — sigue apuntando','');return}
+
+    const existing=db.phones();
+    const contacts=db.all();
+    let added=0;
+
+    for(const phone of phones){
+      const k=dg(phone);
+      if(existing.has(k)){
+        sesDup++;
+        pushLive(phone,true);
+        continue;
       }
-    });
-
-    await ocrWorker.loadLanguage('eng');
-    await ocrWorker.initialize('eng');
-
-    await ocrWorker.setParameters({
-      tessedit_char_whitelist: '0123456789+() -.',
-      tessedit_pageseg_mode: '6'
-    });
-
-    ocrReady = true;
-    hideLoading();
-
-    document.getElementById('ocr-ind').textContent = '● OCR listo';
-    document.getElementById('ocr-ind').classList.add('active');
-
-  } catch (e) {
-    console.error(e);
-    hideLoading();
-    showToast('Error OCR', 'err');
-  }
-}
-
-// ═══════════════════════════════════════════════════
-// START SCANNER
-// ═══════════════════════════════════════════════════
-async function startScanner() {
-  showView('scanner');
-
-  try {
-    videoStream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: 'environment' },
-      audio: false
-    });
-    document.getElementById('video').srcObject = videoStream;
-  } catch {
-    showToast('Sin cámara', 'err');
-    return;
-  }
-
-  if (!ocrReady) await initOCR();
-
-  scanInterval = setInterval(scanFrame, 1500);
-}
-
-// ═══════════════════════════════════════════════════
-// STOP SCANNER
-// ═══════════════════════════════════════════════════
-function stopScanner() {
-  if (scanInterval) clearInterval(scanInterval);
-  if (videoStream) {
-    videoStream.getTracks().forEach(t => t.stop());
-  }
-}
-
-// ═══════════════════════════════════════════════════
-// SCAN FRAME
-// ═══════════════════════════════════════════════════
-async function scanFrame() {
-  if (!ocrReady) return;
-
-  const video = document.getElementById('video');
-  const canvas = document.getElementById('canvas');
-
-  if (!video.videoWidth) return;
-
-  canvas.width = video.videoWidth;
-  canvas.height = video.videoHeight;
-
-  const ctx = canvas.getContext('2d');
-  ctx.drawImage(video, 0, 0);
-
-  try {
-    const { data: { text } } = await ocrWorker.recognize(canvas);
-
-    const phones = extractPhones(text);
-
-    if (phones.length > 0) {
-      showToast('✔ Detectado: ' + phones[0], 'ok');
+      existing.add(k);sesNew++;added++;
+      const name=`Contacto${pad(contacts.length+1)}`;
+      contacts.push({id:Date.now()+Math.random(),name,phone,addedAt:new Date().toISOString(),fresh:true});
+      pushLive(phone,false,name);
     }
 
-  } catch (e) {
-    console.error(e);
+    if(added)db.save(contacts);
+    spill(added?`✔ +${added} guardado${added>1?'s':''}`:'↩ Ya guardado — sigue',added?'ok':'dup');
+    document.getElementById('scan-badge').textContent=(sesNew+sesDup)+' números';
+    document.getElementById('lp-new').textContent=sesNew+' nuevos';
+    document.getElementById('lp-dup').textContent=sesDup+' dup.';
+  }catch(e){spill('⚠ Reintentando...','')}
+}
+
+function spill(txt,cls){
+  const el=document.getElementById('spill');
+  el.textContent=txt;el.className='spill'+(cls?' '+cls:'');
+}
+
+function pushLive(phone,isDup,name=''){
+  const wrap=document.getElementById('live-scroll');
+  // Quitar placeholder
+  const ph=wrap.querySelector('div[style]');if(ph)ph.remove();
+
+  const now=new Date();
+  const t=`${pad(now.getHours(),2)}:${pad(now.getMinutes(),2)}:${pad(now.getSeconds(),2)}`;
+  const el=document.createElement('div');
+  el.className='le'+(isDup?' dupe':' fresh');
+  el.innerHTML=`
+    <span class="le-ic">${isDup?'↩':'✔'}</span>
+    <span class="le-ph">${phone}</span>
+    ${name?`<span class="le-nm">${name}</span>`:''}
+    ${!isDup?'<span class="le-nb">NUEVO</span>':''}
+    <span class="le-tm">${t}</span>`;
+  wrap.insertBefore(el,wrap.firstChild);
+  wrap.scrollTop=0;
+  while(wrap.children.length>60)wrap.removeChild(wrap.lastChild);
+}
+
+async function toggleTorch(){
+  if(!stream)return;
+  const track=stream.getVideoTracks()[0];if(!track)return;
+  try{
+    torchOn=!torchOn;
+    await track.applyConstraints({advanced:[{torch:torchOn}]});
+    document.getElementById('btn-torch').classList.toggle('lit',torchOn);
+  }catch{toast('Linterna no disponible','twn');torchOn=false}
+}
+
+/* ─── LIST ─── */
+function renderList(){
+  const all=db.all();
+  const q=(document.getElementById('srch')?.value||'').toLowerCase().trim();
+  const fil=q?all.filter(c=>c.phone.includes(q)||c.name.toLowerCase().includes(q)):all;
+  const el=document.getElementById('clist');
+
+  if(!fil.length){
+    el.innerHTML=`<div class="empty"><span class="ei">${q?'🔍':'📭'}</span>${q?'Sin resultados para "'+q+'"':'No hay contactos aún.<br>¡Usa la cámara para escanear!'}</div>`;
+    return;
   }
+  el.innerHTML=[...fil].reverse().map(c=>{
+    const d=new Date(c.addedAt);
+    const dt=`${pad(d.getDate(),2)}/${pad(d.getMonth()+1,2)} ${pad(d.getHours(),2)}:${pad(d.getMinutes(),2)}`;
+    return`<div class="ci${c.fresh?' new':''}" id="ci-${c.id}">
+      <div class="ci-av">${c.name.slice(-2)}</div>
+      <div class="ci-info"><div class="ci-name">${c.name}</div><div class="ci-ph">${c.phone}</div></div>
+      <div class="ci-dt">${dt}</div>
+      <button class="ci-rm" onclick="delC('${c.id}')">×</button>
+    </div>`;
+  }).join('');
 }
 
-// ═══════════════════════════════════════════════════
-// PHONE DETECTION
-// ═══════════════════════════════════════════════════
-const PHONE_RE = /(\+?\d[\d\s\-()]{7,})/g;
-
-function extractPhones(text) {
-  const matches = text.match(PHONE_RE) || [];
-  return matches.map(p => p.replace(/\s+/g, ''));
+function refreshStats(){
+  const tot=db.all().length;
+  document.getElementById('n-tot').textContent=tot;
+  document.getElementById('n-ses').textContent=sesNew;
+  document.getElementById('n-dup').textContent=sesDup;
+  document.getElementById('n-del').textContent=sesDel;
+  document.getElementById('ct-badge').textContent=tot;
 }
 
-// ═══════════════════════════════════════════════════
-// UI HELPERS
-// ═══════════════════════════════════════════════════
-function showLoading(msg) {
-  const el = document.getElementById('loading');
-  document.getElementById('loading-msg').textContent = msg;
-  el.style.display = 'flex';
+function delC(id){
+  db.save(db.all().filter(c=>String(c.id)!==String(id)));
+  document.getElementById('ci-'+id)?.remove();
+  sesDel++;refreshStats();
+  if(!document.getElementById('clist').children.length)renderList();
 }
 
-function hideLoading() {
-  document.getElementById('loading').style.display = 'none';
+/* ─── EXPORTS ─── */
+function fts(){const d=new Date();return`${d.getFullYear()}${pad(d.getMonth()+1,2)}${pad(d.getDate(),2)}_${pad(d.getHours(),2)}${pad(d.getMinutes(),2)}`}
+function dl(n,m,data){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([data],{type:m}));a.download=n;a.click();URL.revokeObjectURL(a.href)}
+
+function expJSON(){
+  const c=db.all();if(!c.length){toast('Sin datos','twn');return}
+  dl(`wa_${fts()}.json`,'application/json',JSON.stringify({exported_at:new Date().toISOString(),total:c.length,contacts:c},null,2));
+  toast('✔ JSON descargado','tok');
+}
+function expCSV(){
+  const c=db.all();if(!c.length){toast('Sin datos','twn');return}
+  dl(`wa_${fts()}.csv`,'text/csv','\uFEFF'+'Nombre,Teléfono,Fecha\n'+c.map(x=>`"${x.name}","${x.phone}","${x.addedAt}"`).join('\n'));
+  toast('✔ CSV descargado','tok');
+}
+function expXLSX(){
+  const c=db.all();if(!c.length){toast('Sin datos','twn');return}
+  if(typeof XLSX==='undefined'){
+    showLdr('Cargando exportador...',0);
+    const s=document.createElement('script');
+    s.src='https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+    s.onload=()=>{hideLdr();_xlsx(c)};
+    document.head.appendChild(s);
+  }else _xlsx(c);
+}
+function _xlsx(c){
+  const ws=XLSX.utils.aoa_to_sheet([['Nombre','Teléfono','Fecha'],...c.map(x=>[x.name,x.phone,x.addedAt])]);
+  ws['!cols']=[{wch:16},{wch:18},{wch:22}];
+  const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Contactos');
+  XLSX.writeFile(wb,`wa_${fts()}.xlsx`);toast('✔ XLSX descargado','tok');
 }
 
-function showToast(msg, type='ok') {
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.className = 'show ' + type;
-  setTimeout(() => t.classList.remove('show'), 2000);
+/* ─── TOAST ─── */
+let tT;
+function toast(msg,cls='tok'){
+  const el=document.getElementById('toast');
+  el.textContent=msg;el.className='on '+cls;
+  clearTimeout(tT);tT=setTimeout(()=>el.classList.remove('on'),2600);
 }
 
-function showView(id) {
-  document.querySelectorAll('.view').forEach(v => {
-    v.style.display = 'none';
-  });
-  document.getElementById(id).style.display = 'flex';
-}
+/* ─── INIT ─── */
+document.getElementById('home-sub').textContent=db.all().length+' guardados en total';
 </script>
 </body>
 </html>
