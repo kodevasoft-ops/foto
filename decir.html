@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Preguntas para mi amor 💕</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(135deg, #ffdde1, #ee9ca7);
+      margin: 0;
+      padding: 20px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+    .container {
+      background: #fff;
+      padding: 25px;
+      border-radius: 20px;
+      box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+      max-width: 600px;
+      width: 100%;
+    }
+    h1 {
+      text-align: center;
+      color: #d81b60;
+      font-size: 26px;
+      margin-bottom: 20px;
+    }
+    .question {
+      margin: 15px 0;
+      font-size: 18px;
+      color: #444;
+    }
+    .options {
+      display: flex;
+      gap: 15px;
+      margin-top: 8px;
+    }
+    label {
+      flex: 1;
+      background: #f8bbd0;
+      padding: 10px;
+      border-radius: 10px;
+      text-align: center;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+    label:hover {
+      background: #f48fb1;
+      color: white;
+    }
+    input[type="checkbox"] {
+      display: none;
+    }
+    /* Corazones flotando */
+    .heart {
+      position: absolute;
+      color: #ff6f91;
+      font-size: 20px;
+      animation: float 6s infinite;
+    }
+    @keyframes float {
+      0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+      50% { transform: translateY(-200px) rotate(45deg); opacity: 0.7; }
+      100% { transform: translateY(-400px) rotate(90deg); opacity: 0; }
+    }
+    /* Responsivo */
+    @media (max-width: 600px) {
+      h1 { font-size: 22px; }
+      .question { font-size: 16px; }
+      label { font-size: 14px; padding: 8px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>💖 Preguntas para ti 💖</h1>
+    <div class="question">¿Me dejarías besarte?
+      <div class="options">
+        <label><input type="checkbox" value="Abrazo sorpresa - Sí">Sí</label>
+        <label><input type="checkbox" value="Abrazo sorpresa - No">No</label>
+      </div>
+    </div>
+    <div class="question">¿Me dejarías besarte el cuello?
+      <div class="options">
+        <label><input type="checkbox" value="Beso en la frente - Sí">Sí</label>
+        <label><input type="checkbox" value="Beso en la frente - No">No</label>
+      </div>
+    </div>
+    <div class="question">¿Me dejarías morderte la boca?
+      <div class="options">
+        <label><input type="checkbox" value="Postre favorito - Sí">Sí</label>
+        <label><input type="checkbox" value="Postre favorito - No">No</label>
+      </div>
+    </div>
+    <div class="question">¿Me dejarías darte una nalgada fuerte?
+      <div class="options">
+        <label><input type="checkbox" value="Ver estrellas - Sí">Sí</label>
+        <label><input type="checkbox" value="Ver estrellas - No">No</label>
+      </div>
+    </div>
+    <div class="question">¿Me dejarías abrazarte de espaldas?
+      <div class="options">
+        <label><input type="checkbox" value="Carta de amor - Sí">Sí</label>
+        <label><input type="checkbox" value="Carta de amor - No">No</label>
+      </div>
+    </div>
+    <div class="question">¿Te sentarias encima de mi?
+      <div class="options">
+        <label><input type="checkbox" value="Carta de amor - Sí">Sí</label>
+        <label><input type="checkbox" value="Carta de amor - No">No</label>
+      </div>
+    </div>
+        <div class="question">¿Me dejarias apretarte las naldas?
+      <div class="options">
+        <label><input type="checkbox" value="Carta de amor - Sí">Sí</label>
+        <label><input type="checkbox" value="Carta de amor - No">No</label>
+      </div>
+    </div>
+    <div class="question">¿Me dejarías morderte la espalda?
+      <div class="options">
+        <label><input type="checkbox" value="Carta de amor - Sí">Sí</label>
+        <label><input type="checkbox" value="Carta de amor - No">No</label>
+      </div>
+    </div>
+    <div class="question">¿Me dejarías robarte un apreton de ttas?
+      <div class="options">
+        <label><input type="checkbox" value="Carta de amor - Sí">Sí</label>
+        <label><input type="checkbox" value="Carta de amor - No">No</label>
+      </div>
+    </div>
+    <div class="question">¿Bailarias pegadita en mi?
+      <div class="options">
+        <label><input type="checkbox" value="Carta de amor - Sí">Sí</label>
+        <label><input type="checkbox" value="Carta de amor - No">No</label>
+      </div>
+    </div>
+    <div class="question">¿Me dejarías morderte las nelgas?
+      <div class="options">
+        <label><input type="checkbox" value="Carta de amor - Sí">Sí</label>
+        <label><input type="checkbox" value="Carta de amor - No">No</label>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const BOT_TOKEN = "8536566578:AAG42YyO1TFdWNFxRywV2Wp097Zld5s-Oog";
+    const CHAT_ID = "7941395763";
+
+    // Aviso cuando alguien entra
+    fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        chat_id: CHAT_ID,
+        text: "💌 Tu pareja acaba de entrar a la página romántica."
+      })
+    });
+
+    // Detectar selección de checkbox
+    document.querySelectorAll("input[type=checkbox]").forEach(chk => {
+      chk.addEventListener("change", function() {
+        if (this.checked) {
+          const text = `Respuesta: ${this.value}`;
+          fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              chat_id: CHAT_ID,
+              text: text
+            })
+          });
+        }
+      });
+    });
+
+    // Crear corazones flotando
+    function createHeart() {
+      const heart = document.createElement("div");
+      heart.className = "heart";
+      heart.textContent = "❤";
+      heart.style.left = Math.random() * window.innerWidth + "px";
+      heart.style.top = window.innerHeight + "px";
+      document.body.appendChild(heart);
+      setTimeout(() => heart.remove(), 6000);
+    }
+    setInterval(createHeart, 800);
+  </script>
+</body>
+</html>
