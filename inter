@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Consulta Guía Inter Rapidísimo</title>
+    <style>
+        body { font-family: Arial, sans-serif; background-color: #f4f4f9; padding: 20px; }
+        .container { max-width: 600px; margin: auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        h2 { color: #003366; }
+        .data-box { background: #e9ecef; padding: 15px; border-radius: 5px; margin-top: 10px; white-space: pre-wrap; font-family: monospace; font-size: 12px; border: 1px solid #ccc; }
+        button { background: #003366; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; width: 100%; font-size: 16px; }
+        button:hover { background: #0056b3; }
+        .loading { color: orange; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Seguimiento de Guía</h2>
+    <p>Guía a consultar: <strong>700186349291</strong></p>
+    <button onclick="consultarGuia()">Consultar Información</button>
+    
+    <div id="estado" style="margin-top: 10px;"></div>
+    
+    <h3>Detalles del Envío:</h3>
+    <div id="resultado" class="data-box">Los datos aparecerán aquí...</div>
+</div>
+
+<script>
+    async function consultarGuia() {
+        const guia = "700186349291";
+        const user = "Pas4518.cucuta1";
+        const pass = "Inter4518..";
+        const output = document.getElementById('resultado');
+        const estado = document.getElementById('estado');
+
+        try {
+            estado.innerHTML = '<span class="loading">Autenticando...</span>';
+            
+            // 1. GENERAR BASE64 PARA AUTH
+            const base64Auth = btoa(`${user}:${pass}`);
+
+            // 2. OBTENER TOKEN
+            const tokenResponse = await fetch(`https://stgwww3.interrapidisimo.com/ApiVentaCreditostg/Autorizacion/token?grant_type=password`, {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Basic ${base64Auth}`,
+                    'x-app-signature': 'MiSistemaCucuta'
+                }
+            });
+
+            const tokenData = await tokenResponse.json();
+            const token = tokenData.access_token;
+
+            if (!token) throw new Error("No se pudo obtener el token.");
+
+            estado.innerHTML = '<span class="loading">Consultando guía...</span>';
+
+            // 3. CONSULTAR INFORMACIÓN DE LA GUÍA
+            // Nota: Se envía como un Array de strings en el Body según el manual
+            const trackingResponse = await fetch(`https://stgwww3.interrapidisimo.com/ApiVentaCreditostg/api/ClientesCredito/ConsultarEstadosGuiasCliente`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'x-app-security-token': token
+                },
+                body: JSON.stringify([guia]) 
+            });
+
+            const trackingData = await trackingResponse.json();
+
+            // 4. MOSTRAR RESULTADOS
+            estado.innerHTML = '<span style="color:green;">Consulta Exitosa</span>';
+            output.textContent = JSON.stringify(trackingData, null, 2);
+
+        } catch (error) {
+            estado.innerHTML = '<span style="color:red;">Error en la consulta</span>';
+            output.textContent = "Error: " + error.message;
+        }
+    }
+</script>
+
+</body>
+</html>
