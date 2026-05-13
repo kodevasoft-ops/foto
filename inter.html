@@ -41,7 +41,7 @@
             const base64Auth = btoa(`${user}:${pass}`);
 
             // 2. OBTENER TOKEN
-            const tokenResponse = await fetch(`https://stgwww3.interrapidisimo.com/ApiVentaCreditostg/Autorizacion/token?grant_type=password`, {
+            const tokenResponse = await fetch(`https://www3.interrapidisimo.com/ApiVentaCredito/Autorizacion/token?grant_type=password`, {
                 method: 'GET',
                 headers: {
                     'Authorization': `Basic ${base64Auth}`,
@@ -58,7 +58,7 @@
 
             // 3. CONSULTAR INFORMACIÓN DE LA GUÍA
             // Nota: Se envía como un Array de strings en el Body según el manual
-            const trackingResponse = await fetch(`https://stgwww3.interrapidisimo.com/ApiVentaCreditostg/api/ClientesCredito/ConsultarEstadosGuiasCliente`, {
+            const trackingResponse = await fetch(`https://www3.interrapidisimo.com/ApiVentaCredito/api/ClientesCredito/ConsultarEstadosGuiasCliente`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
